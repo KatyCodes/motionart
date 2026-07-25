@@ -1,6 +1,10 @@
 import { Application, Sprite, Texture } from 'pixi.js';
 import { decodeArtwork, type ArtworkSource, type DecodedArtwork } from './ArtworkSource';
-import { getDriftFrame } from './DriftAnimation';
+import {
+  defaultDriftSettings,
+  getDriftFrame,
+  type DriftSettings,
+} from './DriftAnimation';
 
 export class PreviewEngine {
   private readonly app = new Application();
@@ -9,6 +13,7 @@ export class PreviewEngine {
   private artworkLoad?: AbortController;
   private playbackTimeSeconds = 0;
   private baseScale = 1;
+  private driftSettings = defaultDriftSettings;
   private started = false;
   private destroyed = false;
 
@@ -70,6 +75,11 @@ export class PreviewEngine {
     this.renderAt(this.playbackTimeSeconds);
   }
 
+  setDriftSettings(settings: DriftSettings): void {
+    this.driftSettings = { ...settings };
+    this.renderAt(this.playbackTimeSeconds);
+  }
+
   destroy(): void {
     if (this.destroyed) return;
 
@@ -84,7 +94,7 @@ export class PreviewEngine {
   renderAt(timeSeconds: number): void {
     if (!this.artwork) return;
 
-    const frame = getDriftFrame(timeSeconds);
+    const frame = getDriftFrame(timeSeconds, this.driftSettings);
 
     this.artwork.scale.set(this.baseScale * frame.zoom);
     this.artwork.position.set(

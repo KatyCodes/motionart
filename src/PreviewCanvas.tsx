@@ -1,0 +1,48 @@
+import { useEffect, useRef, useState } from 'react';
+import { PreviewEngine } from './preview/PreviewEngine';
+import type { ArtworkSource } from './preview/ArtworkSource';
+
+interface PreviewCanvasProps {
+  artwork: ArtworkSource;
+  speed: number;
+  intensity: number;
+}
+
+export function PreviewCanvas({ artwork, speed, intensity }: PreviewCanvasProps) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<PreviewEngine | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const host = hostRef.current;
+
+    if (!host) return;
+
+    const preview = new PreviewEngine(host);
+    previewRef.current = preview;
+    let active = true;
+
+    void preview.start(artwork).catch((reason: unknown) => {
+      if (active) {
+        setError(reason instanceof Error ? reason.message : 'The artwork preview could not be loaded.');
+      }
+    });
+
+    return () => {
+      active = false;
+      preview.destroy();
+      previewRef.current = null;
+    };
+  }, [artwork]);
+
+  useEffect(() => {
+    previewRef.current?.setDriftSettings({ speed, intensity });
+  }, [speed, intensity]);
+
+  return (
+    <div className="preview-frame">
+      <div className="preview-canvas" ref={hostRef} aria-label="Animated album artwork preview" />
+      {error ? <p className="preview-error">{error}</p> : null}
+    </div>
+  );
+}

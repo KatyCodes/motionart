@@ -12,6 +12,8 @@ Requires Node.js 20.19+ or 22.12+.
 
 For first-time Mac setup and an explanation of the development environment, see [DEVELOPMENT.md](./DEVELOPMENT.md).
 
+For an explanation of the TypeScript and React files in this proof of concept, see [TYPESCRIPT-WALKTHROUGH.md](./TYPESCRIPT-WALKTHROUGH.md).
+
 ```bash
 npm install
 npm run dev
