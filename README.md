@@ -14,6 +14,8 @@ For first-time Mac setup and an explanation of the development environment, see 
 
 For an explanation of the TypeScript and React files in this proof of concept, see [TYPESCRIPT-WALKTHROUGH.md](./TYPESCRIPT-WALKTHROUGH.md).
 
+For the testing workflow and engineering practices, see [ENGINEERING.md](./ENGINEERING.md).
+
 ```bash
 npm install
 npm run dev

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import sampleCoverUrl from './assets/sample-cover.svg';
 import { sampleProject, type AlbumMotionProject } from './model/AlbumMotionProject';
+import { normalizeMotionControls } from './model/MotionControls';
 import type { ArtworkSource } from './preview/ArtworkSource';
 import { PreviewCanvas } from './PreviewCanvas';
 
@@ -9,15 +10,17 @@ const sampleArtwork: ArtworkSource = {
   url: sampleCoverUrl,
 };
 
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(Math.max(value, minimum), maximum);
-}
-
 export function App() {
   const [project, setProject] = useState<AlbumMotionProject>(sampleProject);
 
   function updateProject(changes: Partial<Pick<AlbumMotionProject, 'speed' | 'intensity'>>) {
-    setProject((current) => ({ ...current, ...changes }));
+    setProject((current) => ({
+      ...current,
+      ...normalizeMotionControls({
+        speed: changes.speed ?? current.speed,
+        intensity: changes.intensity ?? current.intensity,
+      }),
+    }));
   }
 
   function surpriseMe() {
@@ -56,7 +59,7 @@ export function App() {
             max="2"
             step="0.05"
             value={project.speed}
-            onChange={(event) => updateProject({ speed: clamp(Number(event.target.value), 0.5, 2) })}
+            onChange={(event) => updateProject({ speed: Number(event.target.value) })}
           />
         </label>
 
@@ -68,7 +71,7 @@ export function App() {
             max="1.5"
             step="0.05"
             value={project.intensity}
-            onChange={(event) => updateProject({ intensity: clamp(Number(event.target.value), 0, 1.5) })}
+            onChange={(event) => updateProject({ intensity: Number(event.target.value) })}
           />
         </label>
 

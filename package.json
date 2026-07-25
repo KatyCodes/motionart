@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "doctor": "node scripts/check-environment.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run doctor && npm run test && npm run build",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview"
@@ -21,6 +24,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "typescript": "^7.0.2",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
   }
 }
