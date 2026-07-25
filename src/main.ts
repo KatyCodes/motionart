@@ -1,6 +1,7 @@
 import './style.css';
 import sampleCoverUrl from './assets/sample-cover.svg';
 import { PreviewEngine } from './preview/PreviewEngine';
+import type { ArtworkSource } from './preview/ArtworkSource';
 
 const host = document.querySelector<HTMLElement>('#preview');
 
@@ -9,9 +10,13 @@ if (!host) {
 }
 
 const preview = new PreviewEngine(host);
+const sampleArtwork: ArtworkSource = {
+  type: 'url',
+  url: sampleCoverUrl,
+};
 
 try {
-  await preview.start(sampleCoverUrl);
+  await preview.start(sampleArtwork);
 } catch (error) {
   console.error(error);
   host.textContent = 'The artwork preview could not be loaded.';
