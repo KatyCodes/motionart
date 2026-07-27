@@ -25,7 +25,7 @@ createRoot(root).render(
 />
 ```
 
-`App` is now a demonstration host, similar to a distributor embedding the product. It owns the current project and release data. The editor receives that data through props and reports changes through callbacks.
+`App` is now a demonstration host, similar to a distributor embedding the product. It owns the current project and release data. The collapsed “Developer tools” panel simulates CD Baby's launch payload, but it sits outside `AlbumMotionEditor` and would not appear in the artist-facing integration. The editor receives data through props and reports changes through callbacks.
 
 ## 3. `src/editor/AlbumMotionEditor.tsx`: expose the public contract
 
@@ -53,10 +53,10 @@ export interface AlbumMotionProject {
 An `interface` is a contract for an object. It does not create a real object by itself. Instead, it lets TypeScript reject project data that is missing a required field or has the wrong kind of value.
 
 ```ts
-export type MotionStyleId = 'drift';
+export type MotionStyleId = 'drift' | 'water';
 ```
 
-This is a string-literal type. For now, the only permitted motion style is exactly `'drift'`. Later we can expand it to `'drift' | 'pulse' | 'dream'` without using vague strings everywhere.
+This is a union of string-literal types. A project may use exactly `'drift'` or `'water'`; a typo such as `'watre'` is rejected by TypeScript. We can add future effects to this union without accepting vague strings everywhere.
 
 ## 5. `src/PreviewCanvas.tsx`: connect React to PixiJS
 
@@ -80,21 +80,24 @@ useEffect(() => {
 ## 6. `src/preview/PreviewEngine.ts`: draw, not interface
 
 ```ts
-setDriftSettings(settings: DriftSettings): void {
+setMotionSettings(motionStyle: MotionStyleId, settings: DriftSettings): void {
+  this.motionStyle = motionStyle;
   this.driftSettings = { ...settings };
   this.renderAt(this.playbackTimeSeconds);
 }
 ```
 
-This public method accepts a typed settings object and redraws the artwork. `: void` says that the method performs an action but does not return a result.
+This public method accepts a permitted effect ID plus a typed settings object and redraws the artwork. `: void` says that the method performs an action but does not return a result.
 
-## 7. `src/preview/DriftAnimation.ts`: keep animation math pure
+## 7. `DriftAnimation.ts` and `WaterAnimation.ts`: keep animation math pure
 
 ```ts
 export function getDriftFrame(timeSeconds: number, settings: DriftSettings): DriftFrame
 ```
 
 This function receives data and returns data. It does not read the DOM, call PixiJS, or change a global variable. That makes it predictable: the same time and settings always produce the same frame. A future server renderer can use the same idea.
+
+`getWaterFrame` follows the same rule. It calculates ripple strength, texture-map offsets, and overscan from time, speed, and intensity. `PreviewEngine` turns those values into a PixiJS displacement filter, but the animation recipe itself remains testable without a browser.
 
 ## A small vocabulary
 

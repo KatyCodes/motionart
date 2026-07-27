@@ -134,7 +134,9 @@ function validateMotionProject(value: unknown, label: string): asserts value is 
   if (project.schemaVersion !== 1) throw new RangeError(`${label} must use schema version 1.`);
   validateArtwork(project.artwork, `${label} artwork`);
   requireNonEmptyString(project.destination, `${label} destination`);
-  if (project.motionStyle !== 'drift') throw new RangeError(`${label} has an unsupported motion style.`);
+  if (project.motionStyle !== 'drift' && project.motionStyle !== 'water') {
+    throw new RangeError(`${label} has an unsupported motion style.`);
+  }
   if (project.loopBehavior !== 'loop') throw new RangeError(`${label} has an unsupported loop behavior.`);
 
   requireNumberInRange(

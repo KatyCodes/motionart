@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import type { AlbumMotionProject } from '../model/AlbumMotionProject';
+import type { AlbumMotionProject, MotionStyleId } from '../model/AlbumMotionProject';
 import type { ArtworkReference } from '../model/ArtworkReference';
 import {
   resolveDestinationProfile,
@@ -31,11 +31,18 @@ export interface AlbumMotionEditorResult {
   purchaseItems: PurchaseItem[];
 }
 
+export interface MotionStyleOption {
+  id: MotionStyleId;
+  label: string;
+  description: string;
+}
+
 export interface AlbumMotionEditorProps {
   branding: HostBranding;
   draft: ReleaseMotionDraft;
   release: ReleaseOrder;
   destinationProfiles: readonly DestinationProfile[];
+  motionStyles?: readonly MotionStyleOption[];
   resolveArtwork: (reference: ArtworkReference) => ArtworkSource;
   allowDeliverableChanges?: boolean;
   onDraftChange: (draft: ReleaseMotionDraft) => void;
@@ -48,6 +55,7 @@ export function AlbumMotionEditor({
   draft,
   release,
   destinationProfiles,
+  motionStyles = defaultMotionStyleOptions,
   resolveArtwork,
   allowDeliverableChanges = true,
   onDraftChange,
@@ -63,12 +71,15 @@ export function AlbumMotionEditor({
   const destination = resolveDestinationProfile(destinationProfiles, project.destination);
   const purchaseItems = getPurchaseItems(release);
 
-  function updateProject(changes: Partial<Pick<AlbumMotionProject, 'speed' | 'intensity'>>) {
+  function updateProject(
+    changes: Partial<Pick<AlbumMotionProject, 'motionStyle' | 'speed' | 'intensity'>>,
+  ) {
     onDraftChange(updateDeliverableProject(
       draft,
       activeDeliverable,
       {
         ...project,
+        motionStyle: changes.motionStyle ?? project.motionStyle,
         ...normalizeMotionControls({
           speed: changes.speed ?? project.speed,
           intensity: changes.intensity ?? project.intensity,
@@ -110,6 +121,7 @@ export function AlbumMotionEditor({
 
       <PreviewCanvas
         artwork={artwork}
+        motionStyle={project.motionStyle}
         speed={project.speed}
         intensity={project.intensity}
         aspectRatio={destination.aspectRatio}
@@ -118,13 +130,31 @@ export function AlbumMotionEditor({
       <section className="editor-controls" aria-label="Motion controls">
         <div className="control-heading">
           <div>
-            <p className="eyebrow">Motion style</p>
-            <h2>Drift</h2>
+            <p className="eyebrow">Motion effect</p>
+            <h2>{getMotionStyleLabel(project.motionStyle, motionStyles)}</h2>
           </div>
           <button className="secondary-button" type="button" onClick={surpriseMe}>
             Surprise me
           </button>
         </div>
+
+        <fieldset className="effect-picker">
+          <legend>Choose an effect</legend>
+          <div className="effect-options">
+            {motionStyles.map((option) => (
+              <button
+                className={project.motionStyle === option.id ? 'effect-option is-selected' : 'effect-option'}
+                type="button"
+                aria-pressed={project.motionStyle === option.id}
+                key={option.id}
+                onClick={() => updateProject({ motionStyle: option.id })}
+              >
+                <strong>{option.label}</strong>
+                <span>{option.description}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
         <label className="range-control">
           <span>Speed <output>{project.speed.toFixed(2)}×</output></span>
@@ -202,6 +232,8 @@ export function AlbumMotionEditor({
         </fieldset>
 
         <div className="project-summary">
+          <span>Effect</span>
+          <strong>{getMotionStyleLabel(project.motionStyle, motionStyles)}</strong>
           <span>Preview</span>
           <strong>{destination.name}</strong>
           <span>Loop behavior</span>
@@ -223,6 +255,26 @@ export function AlbumMotionEditor({
       </section>
     </main>
   );
+}
+
+export const defaultMotionStyleOptions: readonly MotionStyleOption[] = [
+  {
+    id: 'drift',
+    label: 'Drift',
+    description: 'Slow cinematic movement and a gentle zoom.',
+  },
+  {
+    id: 'water',
+    label: 'Water',
+    description: 'Flowing ripples that bend the artwork like a reflection.',
+  },
+];
+
+function getMotionStyleLabel(
+  motionStyle: MotionStyleId,
+  options: readonly MotionStyleOption[],
+): string {
+  return options.find((option) => option.id === motionStyle)?.label ?? motionStyle;
 }
 
 function findActiveDeliverable(

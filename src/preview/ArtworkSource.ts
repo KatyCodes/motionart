@@ -13,7 +13,7 @@ export type ArtworkSource =
     };
 
 export interface DecodedArtwork {
-  resource: ImageBitmap | HTMLImageElement;
+  resource: ImageBitmap | HTMLImageElement | HTMLCanvasElement;
   dispose: () => void;
 }
 
@@ -95,10 +95,23 @@ async function decodeWithImageElement(
     await image.decode();
     signal.throwIfAborted();
 
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d');
+
+    if (!canvas.width || !canvas.height || !context) {
+      throw new Error('The artwork image could not be rasterized for preview.');
+    }
+
+    context.drawImage(image, 0, 0);
+
     return {
-      resource: image,
+      resource: canvas,
       dispose: () => {
         image.src = '';
+        canvas.width = 0;
+        canvas.height = 0;
       },
     };
   } finally {

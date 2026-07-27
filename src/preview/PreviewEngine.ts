@@ -1,18 +1,23 @@
-import { Application, Sprite, Texture } from 'pixi.js';
+import { Application, DisplacementFilter, Sprite, Texture } from 'pixi.js';
+import type { MotionStyleId } from '../model/AlbumMotionProject';
 import { decodeArtwork, type ArtworkSource, type DecodedArtwork } from './ArtworkSource';
 import {
   defaultDriftSettings,
   getDriftFrame,
   type DriftSettings,
 } from './DriftAnimation';
+import { getWaterFrame } from './WaterAnimation';
 
 export class PreviewEngine {
   private readonly app = new Application();
   private artwork?: Sprite;
   private decodedArtwork?: DecodedArtwork;
   private artworkLoad?: AbortController;
+  private displacementSprite?: Sprite;
+  private displacementFilter?: DisplacementFilter;
   private playbackTimeSeconds = 0;
   private baseScale = 1;
+  private motionStyle: MotionStyleId = 'drift';
   private driftSettings = defaultDriftSettings;
   private started = false;
   private destroyed = false;
@@ -40,6 +45,7 @@ export class PreviewEngine {
 
     this.host.appendChild(this.app.canvas);
     this.started = true;
+    this.createWaterEffect();
     this.app.renderer.on('resize', this.fitArtwork);
     this.app.ticker.add(this.animate);
 
@@ -77,12 +83,15 @@ export class PreviewEngine {
     this.decodedArtwork = decoded;
     this.artwork = nextArtwork;
     this.app.stage.addChild(nextArtwork);
+    this.applyMotionStyle();
     this.fitArtwork();
     this.renderAt(this.playbackTimeSeconds);
   }
 
-  setDriftSettings(settings: DriftSettings): void {
+  setMotionSettings(motionStyle: MotionStyleId, settings: DriftSettings): void {
+    this.motionStyle = motionStyle;
     this.driftSettings = { ...settings };
+    this.applyMotionStyle();
     this.renderAt(this.playbackTimeSeconds);
   }
 
@@ -96,12 +105,23 @@ export class PreviewEngine {
       this.app.renderer.off('resize', this.fitArtwork);
       this.app.ticker.remove(this.animate);
       this.disposeCurrentArtwork();
+      this.disposeWaterEffect();
       this.app.destroy({ removeView: true }, { children: true });
     }
   }
 
   renderAt(timeSeconds: number): void {
     if (!this.artwork) return;
+
+    if (this.motionStyle === 'water') {
+      const frame = getWaterFrame(timeSeconds, this.driftSettings);
+
+      this.artwork.scale.set(this.baseScale * frame.zoom);
+      this.artwork.position.set(this.app.screen.width / 2, this.app.screen.height / 2);
+      this.displacementFilter?.scale.set(frame.displacementX, frame.displacementY);
+      this.displacementSprite?.position.set(-frame.mapOffsetX, -frame.mapOffsetY);
+      return;
+    }
 
     const frame = getDriftFrame(timeSeconds, this.driftSettings);
 
@@ -128,8 +148,33 @@ export class PreviewEngine {
     this.renderAt(this.playbackTimeSeconds);
   };
 
+  private createWaterEffect(): void {
+    const texture = Texture.from(createWaterDisplacementMap());
+    texture.source.addressMode = 'repeat';
+
+    const displacementSprite = new Sprite(texture);
+    displacementSprite.scale.set(1.1);
+    this.app.stage.addChild(displacementSprite);
+
+    this.displacementSprite = displacementSprite;
+    this.displacementFilter = new DisplacementFilter({
+      sprite: displacementSprite,
+      scale: 0,
+      padding: 32,
+    });
+  }
+
+  private applyMotionStyle(): void {
+    if (!this.artwork) return;
+
+    this.artwork.filters = this.motionStyle === 'water' && this.displacementFilter
+      ? [this.displacementFilter]
+      : null;
+  }
+
   private disposeCurrentArtwork(): void {
     if (this.artwork) {
+      this.artwork.filters = null;
       this.app.stage.removeChild(this.artwork);
       this.artwork.destroy({ texture: true, textureSource: true });
       this.artwork = undefined;
@@ -138,4 +183,48 @@ export class PreviewEngine {
     this.decodedArtwork?.dispose();
     this.decodedArtwork = undefined;
   }
+
+  private disposeWaterEffect(): void {
+    this.displacementFilter?.destroy();
+    this.displacementFilter = undefined;
+
+    if (this.displacementSprite) {
+      this.app.stage.removeChild(this.displacementSprite);
+      this.displacementSprite.destroy({ texture: true, textureSource: true });
+      this.displacementSprite = undefined;
+    }
+  }
+}
+
+function createWaterDisplacementMap(): HTMLCanvasElement {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('The browser could not create the water effect.');
+
+  const imageData = context.createImageData(size, size);
+  const pixels = imageData.data;
+
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const index = (y * size + x) * 4;
+      const normalizedX = x / size;
+      const normalizedY = y / size;
+      const horizontalWave = Math.sin(normalizedY * Math.PI * 8)
+        + Math.sin((normalizedX + normalizedY) * Math.PI * 4) * 0.45;
+      const verticalWave = Math.cos(normalizedX * Math.PI * 6)
+        + Math.cos((normalizedX - normalizedY) * Math.PI * 4) * 0.45;
+
+      pixels[index] = 128 + horizontalWave * 40;
+      pixels[index + 1] = 128 + verticalWave * 40;
+      pixels[index + 2] = 128;
+      pixels[index + 3] = 255;
+    }
+  }
+
+  context.putImageData(imageData, 0, 0);
+  return canvas;
 }

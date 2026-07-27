@@ -1,7 +1,7 @@
 import type { ArtworkReference } from './ArtworkReference';
 import type { DestinationProfileId } from './DestinationProfile';
 
-export type MotionStyleId = 'drift';
+export type MotionStyleId = 'drift' | 'water';
 
 export type LoopBehavior = 'loop';
 

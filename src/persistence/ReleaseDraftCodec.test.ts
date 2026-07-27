@@ -31,6 +31,13 @@ describe('release draft persistence', () => {
     expect(parseReleaseDraft(serializeReleaseDraft(savedDraft))).toEqual(savedDraft);
   });
 
+  it('round-trips the water motion style', () => {
+    const waterDraft = structuredClone(savedDraft);
+    (waterDraft.motion.appleAlbum as { motionStyle: string }).motionStyle = 'water';
+
+    expect(parseReleaseDraft(JSON.stringify(waterDraft))).toEqual(waterDraft);
+  });
+
   it('migrates the previous draft field name into the current schema', () => {
     const legacyJson = JSON.stringify({
       schemaVersion: 0,

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import type { MotionStyleId } from './model/AlbumMotionProject';
 import { PreviewEngine } from './preview/PreviewEngine';
 import type { ArtworkSource } from './preview/ArtworkSource';
 
 interface PreviewCanvasProps {
   artwork: ArtworkSource;
+  motionStyle: MotionStyleId;
   speed: number;
   intensity: number;
   aspectRatio: {
@@ -12,7 +14,7 @@ interface PreviewCanvasProps {
   };
 }
 
-export function PreviewCanvas({ artwork, speed, intensity, aspectRatio }: PreviewCanvasProps) {
+export function PreviewCanvas({ artwork, motionStyle, speed, intensity, aspectRatio }: PreviewCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<PreviewEngine | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,8 +43,8 @@ export function PreviewCanvas({ artwork, speed, intensity, aspectRatio }: Previe
   }, [artwork]);
 
   useEffect(() => {
-    previewRef.current?.setDriftSettings({ speed, intensity });
-  }, [speed, intensity]);
+    previewRef.current?.setMotionSettings(motionStyle, { speed, intensity });
+  }, [motionStyle, speed, intensity]);
 
   return (
     <div className="preview-frame" style={{ aspectRatio: `${aspectRatio.width} / ${aspectRatio.height}` }}>

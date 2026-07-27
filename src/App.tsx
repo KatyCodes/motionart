@@ -138,44 +138,59 @@ export function App() {
 
   return (
     <div className="host-demo">
-      <aside className="host-demo-toolbar" aria-label="Host integration demo">
-        <div className="host-demo-heading">
-          <strong>CD Baby launch payload</strong>
-          <span>{deliverable === 'apple-album' ? 'Album → Apple Music' : 'Track → Spotify'} · {artworkSourceName}</span>
-        </div>
-        <label className="host-demo-field">
-          <span>Incoming order</span>
-          <select
-            aria-label="Incoming order"
-            value={deliverable}
-            onChange={(event) => switchDeliverable(event.target.value as DemoDeliverable)}
-          >
-            <option value="apple-album">Album · Apple Music</option>
-            <option value="spotify-track">Track · Spotify</option>
-          </select>
-        </label>
-        <form className="host-url-form" onSubmit={useArtworkUrl}>
+      <details className="developer-panel">
+        <summary>
+          <span className="developer-badge">Developer tools</span>
+          <span className="developer-summary-copy">
+            <strong>CD Baby integration simulator</strong>
+            <small>Local demo only — artists will not see these controls.</small>
+          </span>
+          <span className="developer-panel-action">Configure demo</span>
+        </summary>
+        <aside className="host-demo-toolbar" aria-label="Host integration demo">
+          <div className="host-demo-heading">
+            <strong>Simulated launch payload</strong>
+            <span>{deliverable === 'apple-album' ? 'Album → Apple Music' : 'Track → Spotify'} · {artworkSourceName}</span>
+          </div>
           <label className="host-demo-field">
-            <span>Artwork URL</span>
-            <input
-              aria-label="Artwork URL"
-              type="url"
-              value={artworkUrl}
-              onChange={(event) => setArtworkUrl(event.target.value)}
-              placeholder="https://cdn.example/artwork.jpg"
-            />
+            <span>Incoming order</span>
+            <select
+              aria-label="Incoming order"
+              value={deliverable}
+              onChange={(event) => switchDeliverable(event.target.value as DemoDeliverable)}
+            >
+              <option value="apple-album">Album · Apple Music</option>
+              <option value="spotify-track">Track · Spotify</option>
+            </select>
           </label>
-          <button type="submit">Launch with URL</button>
-        </form>
-        <button type="button" onClick={useHostLoader}>Use authenticated loader</button>
-        <button type="button" onClick={saveDraft}>Save draft</button>
-        <button type="button" onClick={restoreDraft}>Restore draft</button>
-        <label className="host-file-control">
-          <span>Launch with uploaded image</span>
-          <input type="file" accept="image/*" onChange={(event) => useLocalFile(event.target.files?.[0])} />
-        </label>
-        {handoffMessage ? <output>{handoffMessage}</output> : null}
-      </aside>
+          <form className="host-url-form" onSubmit={useArtworkUrl}>
+            <label className="host-demo-field">
+              <span>Artwork URL</span>
+              <input
+                aria-label="Artwork URL"
+                type="url"
+                value={artworkUrl}
+                onChange={(event) => setArtworkUrl(event.target.value)}
+                placeholder="https://cdn.example/artwork.jpg"
+              />
+            </label>
+            <button type="submit">Launch with URL</button>
+          </form>
+          <button type="button" onClick={useHostLoader}>Use authenticated loader</button>
+          <button type="button" onClick={saveDraft}>Save draft</button>
+          <button type="button" onClick={restoreDraft}>Restore draft</button>
+          <label className="host-file-control">
+            <span>Launch with uploaded image</span>
+            <input type="file" accept="image/*" onChange={(event) => useLocalFile(event.target.files?.[0])} />
+          </label>
+          {handoffMessage ? <output>{handoffMessage}</output> : null}
+        </aside>
+      </details>
+
+      <div className="artist-view-label">
+        <span>Artist experience</span>
+        <small>The reusable editor begins here.</small>
+      </div>
 
       <AlbumMotionEditor
         branding={demoBranding}

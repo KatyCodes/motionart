@@ -1,9 +1,11 @@
 export {
   AlbumMotionEditor,
+  defaultMotionStyleOptions,
   type AlbumMotionEditorProps,
   type AlbumMotionEditorResult,
+  type MotionStyleOption,
 } from './AlbumMotionEditor';
-export type { AlbumMotionProject } from '../model/AlbumMotionProject';
+export type { AlbumMotionProject, MotionStyleId } from '../model/AlbumMotionProject';
 export type { DestinationProfile } from '../model/DestinationProfile';
 export type { HostBranding } from '../model/HostBranding';
 export type { PurchaseItem, ReleaseOrder } from '../model/ReleaseOrder';
