@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import sampleCoverUrl from './assets/sample-cover.svg';
 import { sampleProject, type AlbumMotionProject } from './model/AlbumMotionProject';
 import { destinationProfiles, getDestinationProfile, type DestinationProfileId } from './model/DestinationProfile';
 import { normalizeMotionControls } from './model/MotionControls';
+import { getPurchaseItems, selectAppleAlbum, selectSpotifyTrack, type ReleaseOrder } from './model/ReleaseOrder';
 import type { ArtworkSource } from './preview/ArtworkSource';
 import { PreviewCanvas } from './PreviewCanvas';
 
@@ -24,11 +25,33 @@ const hostLoadedArtwork: ArtworkSource = {
   },
 };
 
+const demoHostBranding = {
+  hostName: 'Distributor demo',
+  productName: 'Motion Studio',
+  accentColor: '#d3b9ff',
+};
+
+const demoRelease: ReleaseOrder = {
+  schemaVersion: 1,
+  album: {
+    id: 'album-demo',
+    title: 'Night Drive',
+    artwork: { provider: 'demo', assetKey: 'sample-cover' },
+  },
+  tracks: [
+    { id: 'track-signal', title: 'Signal', artwork: { provider: 'demo', assetKey: 'signal-cover' } },
+    { id: 'track-afterglow', title: 'Afterglow', artwork: { provider: 'demo', assetKey: 'afterglow-cover' } },
+  ],
+  selections: { appleAlbum: false, spotifyTrackIds: [] },
+};
+
 export function App() {
   const [project, setProject] = useState<AlbumMotionProject>(sampleProject);
   const [artwork, setArtwork] = useState<ArtworkSource>(sampleArtwork);
   const [artworkSourceName, setArtworkSourceName] = useState('Hosted URL');
+  const [release, setRelease] = useState<ReleaseOrder>(demoRelease);
   const destination = getDestinationProfile(project.destination);
+  const purchaseItems = getPurchaseItems(release);
 
   function updateProject(changes: Partial<Pick<AlbumMotionProject, 'speed' | 'intensity'>>) {
     setProject((current) => ({
@@ -68,11 +91,22 @@ export function App() {
     setProject((current) => ({ ...current, destination: destinationId }));
   }
 
+  function updateAppleSelection(selected: boolean) {
+    setRelease((current) => selectAppleAlbum(current, selected));
+  }
+
+  function updateSpotifyTrack(trackId: string, selected: boolean) {
+    setRelease((current) => selectSpotifyTrack(current, trackId, selected));
+  }
+
   return (
-    <main className="editor-shell">
+    <main
+      className="editor-shell"
+      style={{ '--host-accent': demoHostBranding.accentColor } as CSSProperties}
+    >
       <section className="editor-intro">
-        <p className="eyebrow">Album Motion</p>
-        <h1>Bring your artwork to life.</h1>
+        <p className="eyebrow">{demoHostBranding.hostName} · powered by Album Motion</p>
+        <h1>{demoHostBranding.productName}</h1>
         <p className="intro-copy">A browser preview that can later be embedded inside a distributor’s upload flow.</p>
       </section>
 
@@ -149,14 +183,46 @@ export function App() {
           </small>
         </label>
 
+        <fieldset className="purchase-selection">
+          <legend>Choose deliverables</legend>
+          <label className="checkbox-control">
+            <input
+              type="checkbox"
+              checked={release.selections.appleAlbum}
+              onChange={(event) => updateAppleSelection(event.target.checked)}
+            />
+            <span>
+              <strong>Apple Music — {release.album.title}</strong>
+              One album-cover treatment shared by every track.
+            </span>
+          </label>
+          <div className="track-selection">
+            <strong>Spotify Canvas — choose tracks</strong>
+            {release.tracks.map((track) => (
+              <label className="checkbox-control" key={track.id}>
+                <input
+                  type="checkbox"
+                  checked={release.selections.spotifyTrackIds.includes(track.id)}
+                  onChange={(event) => updateSpotifyTrack(track.id, event.target.checked)}
+                />
+                <span>{track.title}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <div className="project-summary">
           <span>Destination</span>
           <strong>{destination.name}</strong>
           <span>Loop behavior</span>
           <strong>Continuous</strong>
+          <span>Purchase items</span>
+          <strong>{purchaseItems.length}</strong>
         </div>
 
-        <button className="primary-button" type="button">Continue to purchase</button>
+        <button className="primary-button" type="button" disabled={purchaseItems.length === 0}>
+          Continue with {purchaseItems.length} item{purchaseItems.length === 1 ? '' : 's'}
+        </button>
       </section>
     </main>
   );
