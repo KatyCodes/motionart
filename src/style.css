@@ -11,6 +11,16 @@ body { min-width: 320px; min-height: 100vh; margin: 0; }
 
 button, input { font: inherit; }
 
+.host-demo { min-height: 100vh; background: #0b0a12; }
+.host-demo-toolbar { position: sticky; z-index: 5; top: 0; display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; padding: .7rem 1rem; border-bottom: 1px solid rgb(255 255 255 / 10%); background: rgb(11 10 18 / 92%); backdrop-filter: blur(14px); }
+.host-demo-toolbar > div { display: grid; margin-right: auto; font-size: .76rem; }
+.host-demo-toolbar > div span { color: rgb(247 242 255 / 55%); }
+.host-demo-toolbar button, .host-demo-toolbar label { padding: .45rem .65rem; border: 1px solid rgb(255 255 255 / 12%); border-radius: .55rem; color: #fff; background: rgb(255 255 255 / 8%); font-size: .75rem; }
+.host-demo-toolbar button { cursor: pointer; }
+.host-demo-toolbar label { position: relative; overflow: hidden; }
+.host-demo-toolbar label input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.host-demo-toolbar output { flex-basis: 100%; color: #c9ffdc; font-size: .75rem; }
+
 .editor-shell {
   width: min(1120px, 100%);
   min-height: 100vh;
@@ -24,6 +34,8 @@ button, input { font: inherit; }
 }
 
 .editor-intro { grid-column: 1 / -1; max-width: 650px; }
+.brand-lockup { display: flex; gap: .65rem; align-items: center; margin-bottom: .35rem; }
+.brand-lockup img { width: 2rem; height: 2rem; object-fit: contain; }
 .eyebrow { margin: 0; color: var(--host-accent, #b99afa); font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: .6rem; font-size: clamp(2.4rem, 5vw, 4.6rem); letter-spacing: -.06em; line-height: .95; }
@@ -65,6 +77,7 @@ input[type='range'] { width: 100%; accent-color: #b99afa; }
 .secondary-button { padding: .65rem .8rem; color: #f7f2ff; background: rgb(255 255 255 / 10%); }
 .primary-button:hover, .secondary-button:hover { filter: brightness(1.1); }
 .primary-button:disabled { cursor: not-allowed; opacity: .5; filter: none; }
+.support-link { color: var(--host-accent, #d3b9ff); font-size: .78rem; text-align: center; }
 
 @media (max-width: 760px) {
   .editor-shell { grid-template-columns: 1fr; }

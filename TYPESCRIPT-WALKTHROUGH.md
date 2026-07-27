@@ -14,23 +14,32 @@ createRoot(root).render(
 
 `createRoot` tells React which HTML element it owns. `<App />` means “render the `App` component.” The `.tsx` extension means this file contains TypeScript plus JSX, React's HTML-like syntax.
 
-## 2. `src/App.tsx`: describe the editor
+## 2. `src/App.tsx`: act like an embedding customer
 
 ```ts
-const [project, setProject] = useState<AlbumMotionProject>(sampleProject);
+<AlbumMotionEditor
+  project={project}
+  release={release}
+  onProjectChange={setProject}
+  onReleaseChange={setRelease}
+/>
 ```
 
-`useState` stores information that can change while the page is open. `project` is the current project recipe. `setProject` replaces it with an updated recipe. `<AlbumMotionProject>` is a type argument: it tells TypeScript exactly what shape of data is allowed.
+`App` is now a demonstration host, similar to a distributor embedding the product. It owns the current project and release data. The editor receives that data through props and reports changes through callbacks.
+
+## 3. `src/editor/AlbumMotionEditor.tsx`: expose the public contract
 
 ```ts
-function updateProject(changes: Partial<Pick<AlbumMotionProject, 'speed' | 'intensity'>>) {
-  setProject((current) => ({ ...current, ...changes }));
+export interface AlbumMotionEditorProps {
+  branding: HostBranding;
+  project: AlbumMotionProject;
+  onProjectChange: (project: AlbumMotionProject) => void;
 }
 ```
 
-`Pick` selects only `speed` and `intensity` from the larger project type. `Partial` makes those selected fields optional, so the function can update one control at a time. `...current` copies the old project; `...changes` overwrites only the supplied fields.
+The props interface is the integration contract. A callback such as `onProjectChange` is a function supplied by the host. The editor calls it with the updated project instead of deciding where that project should be stored.
 
-## 3. `src/model/AlbumMotionProject.ts`: define the saved recipe
+## 4. `src/model/AlbumMotionProject.ts`: define the saved recipe
 
 ```ts
 export interface AlbumMotionProject {
@@ -49,7 +58,7 @@ export type MotionStyleId = 'drift';
 
 This is a string-literal type. For now, the only permitted motion style is exactly `'drift'`. Later we can expand it to `'drift' | 'pulse' | 'dream'` without using vague strings everywhere.
 
-## 4. `src/PreviewCanvas.tsx`: connect React to PixiJS
+## 5. `src/PreviewCanvas.tsx`: connect React to PixiJS
 
 ```ts
 const previewRef = useRef<PreviewEngine | null>(null);
@@ -68,7 +77,7 @@ useEffect(() => {
 
 `useEffect` runs after React puts the component on the page. The returned function is cleanup: React calls it when the preview is removed or its artwork source changes. `void` here deliberately ignores the promise returned by the asynchronous `start()` method; errors are handled with `.catch(...)` in the real code.
 
-## 5. `src/preview/PreviewEngine.ts`: draw, not interface
+## 6. `src/preview/PreviewEngine.ts`: draw, not interface
 
 ```ts
 setDriftSettings(settings: DriftSettings): void {
@@ -79,7 +88,7 @@ setDriftSettings(settings: DriftSettings): void {
 
 This public method accepts a typed settings object and redraws the artwork. `: void` says that the method performs an action but does not return a result.
 
-## 6. `src/preview/DriftAnimation.ts`: keep animation math pure
+## 7. `src/preview/DriftAnimation.ts`: keep animation math pure
 
 ```ts
 export function getDriftFrame(timeSeconds: number, settings: DriftSettings): DriftFrame

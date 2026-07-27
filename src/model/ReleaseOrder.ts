@@ -1,5 +1,4 @@
 import type { ArtworkReference } from './ArtworkReference';
-import type { DestinationProfileId } from './DestinationProfile';
 
 export interface ReleaseOrder {
   schemaVersion: 1;
@@ -24,8 +23,8 @@ export interface ReleaseSelections {
 }
 
 export type PurchaseItem =
-  | { kind: 'apple-album'; albumId: string; profileId: Extract<DestinationProfileId, 'apple-music-cover-art-v1'> }
-  | { kind: 'spotify-track'; trackId: string; profileId: Extract<DestinationProfileId, 'spotify-canvas-v1'> };
+  | { kind: 'apple-album'; albumId: string; profileId: 'apple-music-cover-art-v1' }
+  | { kind: 'spotify-track'; trackId: string; profileId: 'spotify-canvas-v1' };
 
 export function selectAppleAlbum(order: ReleaseOrder, selected: boolean): ReleaseOrder {
   return {

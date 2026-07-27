@@ -17,7 +17,13 @@ export interface DestinationProfile {
   acceptedFormats: readonly string[];
 }
 
-export type DestinationProfileId = 'spotify-canvas-v1' | 'apple-music-cover-art-v1' | 'square-campaign-v1';
+export type BuiltInDestinationProfileId =
+  | 'spotify-canvas-v1'
+  | 'apple-music-cover-art-v1'
+  | 'square-campaign-v1';
+
+/** Host applications may add their own stable, versioned profile IDs. */
+export type DestinationProfileId = string;
 
 export const destinationProfiles: readonly DestinationProfile[] = [
   {
@@ -45,12 +51,20 @@ export const destinationProfiles: readonly DestinationProfile[] = [
 ];
 
 export function getDestinationProfile(id: string): DestinationProfile {
-  const profile = destinationProfiles.find((candidate) => candidate.id === id);
+  return resolveDestinationProfile(destinationProfiles, id);
+}
+
+export function resolveDestinationProfile(
+  profiles: readonly DestinationProfile[],
+  id: string,
+): DestinationProfile {
+  const profile = profiles.find((candidate) => candidate.id === id);
 
   if (!profile) {
     throw new Error(`Unknown destination profile: ${id}`);
   }
 
+  validateDestinationProfile(profile);
   return profile;
 }
 

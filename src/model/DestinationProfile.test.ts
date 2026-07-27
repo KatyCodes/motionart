@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getDestinationProfile, validateDestinationProfile } from './DestinationProfile';
+import {
+  getDestinationProfile,
+  resolveDestinationProfile,
+  validateDestinationProfile,
+  type DestinationProfile,
+} from './DestinationProfile';
 
 describe('destination profiles', () => {
   it('provides a reusable profile for each available destination', () => {
@@ -23,6 +28,18 @@ describe('destination profiles', () => {
 
   it('rejects an unknown destination instead of silently using a default', () => {
     expect(() => getDestinationProfile('unknown-destination')).toThrow('Unknown destination profile');
+  });
+
+  it('resolves a custom destination supplied by an embedding host', () => {
+    const customProfile: DestinationProfile = {
+      id: 'client-video-v1',
+      name: 'Client video',
+      aspectRatio: { width: 4, height: 5 },
+      pixelRequirements: { minWidth: 1080, minHeight: 1350 },
+      acceptedFormats: ['mp4'],
+    };
+
+    expect(resolveDestinationProfile([customProfile], 'client-video-v1')).toBe(customProfile);
   });
 
   it('rejects profiles whose aspect ratio cannot create a preview', () => {

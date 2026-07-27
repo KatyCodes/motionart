@@ -32,6 +32,12 @@ export class PreviewEngine {
       autoDensity: true,
     });
 
+    // React Strict Mode may clean up an effect while Pixi is still initializing.
+    if (this.destroyed) {
+      this.app.destroy({ removeView: true }, { children: true });
+      return;
+    }
+
     this.host.appendChild(this.app.canvas);
     this.started = true;
     this.app.renderer.on('resize', this.fitArtwork);
@@ -85,10 +91,13 @@ export class PreviewEngine {
 
     this.destroyed = true;
     this.artworkLoad?.abort();
-    this.app.renderer.off('resize', this.fitArtwork);
-    this.app.ticker.remove(this.animate);
-    this.disposeCurrentArtwork();
-    this.app.destroy({ removeView: true }, { children: true });
+
+    if (this.started) {
+      this.app.renderer.off('resize', this.fitArtwork);
+      this.app.ticker.remove(this.animate);
+      this.disposeCurrentArtwork();
+      this.app.destroy({ removeView: true }, { children: true });
+    }
   }
 
   renderAt(timeSeconds: number): void {

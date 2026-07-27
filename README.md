@@ -6,6 +6,25 @@ The preview engine accepts artwork without assuming where it is stored. A host c
 
 Animation state is calculated from an explicit timestamp through `renderAt(timeSeconds)`, so the same time and project settings can later produce the same frame in both the browser preview and server renderer.
 
+## Embed contract
+
+The demo page is a small example host. The reusable editor receives all customer-owned data through props and reports changes through callbacks:
+
+```tsx
+<AlbumMotionEditor
+  branding={customerBranding}
+  artwork={artworkSource}
+  project={project}
+  release={release}
+  destinationProfiles={customerProfiles}
+  onProjectChange={saveProjectDraft}
+  onReleaseChange={saveReleaseDraft}
+  onContinue={startCustomerCheckout}
+/>
+```
+
+The host owns catalog data, artwork access, persistence, branding, and checkout. The editor owns motion controls, preview rendering, destination validation, and the structured purchase handoff.
+
 ## Run locally
 
 Requires Node.js 20.19+ or 22.12+.
