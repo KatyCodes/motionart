@@ -6,6 +6,8 @@ For a behavior change, write one small failing unit test first. Implement only e
 
 Use `npm test` for a single full test run, `npm run test:watch` while developing, and `npm run check` before committing.
 
+GitHub Actions runs the same `npm run check` command for every pull request and for changes merged to `main`.
+
 ## What to unit test
 
 - Test project rules, validation, destinations, motion math, and serialization as pure TypeScript.

@@ -40,6 +40,14 @@ h2 { margin-bottom: 0; font-size: 1.6rem; }
 .range-control span { display: flex; justify-content: space-between; }
 output { color: #fff; font-variant-numeric: tabular-nums; }
 input[type='range'] { width: 100%; accent-color: #b99afa; }
+.artwork-source-controls { display: grid; gap: .8rem; margin: 0; padding: 1rem; border: 1px solid rgb(255 255 255 / 10%); border-radius: .9rem; }
+.artwork-source-controls legend { padding: 0 .35rem; color: rgb(247 242 255 / 80%); font-size: .92rem; }
+.artwork-source-controls p { display: grid; gap: .3rem; margin: 0; color: rgb(247 242 255 / 58%); font-size: .8rem; line-height: 1.4; }
+.artwork-source-controls p strong { color: #fff; font-size: .9rem; }
+.source-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.source-actions .secondary-button { padding: .55rem .45rem; font-size: .8rem; }
+.file-control { display: grid; gap: .45rem; color: rgb(247 242 255 / 70%); font-size: .8rem; }
+.file-control input { max-width: 100%; color: rgb(247 242 255 / 70%); font-size: .75rem; }
 .project-summary { display: grid; grid-template-columns: 1fr auto; gap: .75rem 1rem; padding-top: 1.25rem; border-top: 1px solid rgb(255 255 255 / 10%); color: rgb(247 242 255 / 58%); font-size: .85rem; }
 .project-summary strong { color: #fff; font-weight: 600; }
 .primary-button, .secondary-button { border: 0; border-radius: .75rem; cursor: pointer; font-weight: 700; }
