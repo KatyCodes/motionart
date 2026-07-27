@@ -145,7 +145,7 @@ export function App() {
             ))}
           </select>
           <small>
-            {destination.aspectRatio.width}:{destination.aspectRatio.height} preview · {destination.output.width} × {destination.output.height} output
+            {destination.aspectRatio.width}:{destination.aspectRatio.height} preview · {formatDestinationRequirements(destination)}
           </small>
         </label>
 
@@ -160,4 +160,16 @@ export function App() {
       </section>
     </main>
   );
+}
+
+function formatDestinationRequirements(destination: ReturnType<typeof getDestinationProfile>): string {
+  const pixelRequirements = destination.pixelRequirements;
+  const dimensions = pixelRequirements.minWidth && pixelRequirements.minHeight
+    ? `minimum ${pixelRequirements.minWidth} × ${pixelRequirements.minHeight}px`
+    : `${pixelRequirements.minHeight}–${pixelRequirements.maxHeight}px tall`;
+  const duration = destination.durationSeconds
+    ? ` · ${destination.durationSeconds.min}–${destination.durationSeconds.max}s`
+    : '';
+
+  return `${dimensions}${duration} · ${destination.acceptedFormats.join(', ').toUpperCase()}`;
 }

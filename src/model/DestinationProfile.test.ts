@@ -9,6 +9,18 @@ describe('destination profiles', () => {
     });
   });
 
+  it('keeps Apple Music requirements separate from Spotify Canvas requirements', () => {
+    expect(getDestinationProfile('apple-music-cover-art-v1')).toMatchObject({
+      aspectRatio: { width: 1, height: 1 },
+      pixelRequirements: { minWidth: 4000, minHeight: 4000 },
+    });
+
+    expect(getDestinationProfile('spotify-canvas-v1')).toMatchObject({
+      durationSeconds: { min: 3, max: 8 },
+      pixelRequirements: { minHeight: 720, maxHeight: 1080 },
+    });
+  });
+
   it('rejects an unknown destination instead of silently using a default', () => {
     expect(() => getDestinationProfile('unknown-destination')).toThrow('Unknown destination profile');
   });
@@ -18,7 +30,8 @@ describe('destination profiles', () => {
       id: 'invalid-v1',
       name: 'Invalid',
       aspectRatio: { width: 0, height: 1 },
-      output: { width: 1080, height: 1080 },
+      pixelRequirements: { minWidth: 1080, minHeight: 1080 },
+      acceptedFormats: ['mp4'],
     })).toThrow(RangeError);
   });
 });
