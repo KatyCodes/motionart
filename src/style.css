@@ -48,6 +48,9 @@ input[type='range'] { width: 100%; accent-color: #b99afa; }
 .source-actions .secondary-button { padding: .55rem .45rem; font-size: .8rem; }
 .file-control { display: grid; gap: .45rem; color: rgb(247 242 255 / 70%); font-size: .8rem; }
 .file-control input { max-width: 100%; color: rgb(247 242 255 / 70%); font-size: .75rem; }
+.destination-control { display: grid; gap: .45rem; color: rgb(247 242 255 / 80%); font-size: .92rem; }
+.destination-control select { width: 100%; padding: .65rem .7rem; border: 1px solid rgb(255 255 255 / 16%); border-radius: .6rem; color: #fff; background: #211c2e; }
+.destination-control small { color: rgb(247 242 255 / 58%); font-size: .76rem; }
 .project-summary { display: grid; grid-template-columns: 1fr auto; gap: .75rem 1rem; padding-top: 1.25rem; border-top: 1px solid rgb(255 255 255 / 10%); color: rgb(247 242 255 / 58%); font-size: .85rem; }
 .project-summary strong { color: #fff; font-weight: 600; }
 .primary-button, .secondary-button { border: 0; border-radius: .75rem; cursor: pointer; font-weight: 700; }

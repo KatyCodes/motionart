@@ -6,9 +6,13 @@ interface PreviewCanvasProps {
   artwork: ArtworkSource;
   speed: number;
   intensity: number;
+  aspectRatio: {
+    width: number;
+    height: number;
+  };
 }
 
-export function PreviewCanvas({ artwork, speed, intensity }: PreviewCanvasProps) {
+export function PreviewCanvas({ artwork, speed, intensity, aspectRatio }: PreviewCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const previewRef = useRef<PreviewEngine | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +44,7 @@ export function PreviewCanvas({ artwork, speed, intensity }: PreviewCanvasProps)
   }, [speed, intensity]);
 
   return (
-    <div className="preview-frame">
+    <div className="preview-frame" style={{ aspectRatio: `${aspectRatio.width} / ${aspectRatio.height}` }}>
       <div className="preview-canvas" ref={hostRef} aria-label="Animated album artwork preview" />
       {error ? <p className="preview-error">{error}</p> : null}
     </div>

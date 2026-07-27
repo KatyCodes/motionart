@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import sampleCoverUrl from './assets/sample-cover.svg';
 import { sampleProject, type AlbumMotionProject } from './model/AlbumMotionProject';
+import { destinationProfiles, getDestinationProfile, type DestinationProfileId } from './model/DestinationProfile';
 import { normalizeMotionControls } from './model/MotionControls';
 import type { ArtworkSource } from './preview/ArtworkSource';
 import { PreviewCanvas } from './PreviewCanvas';
@@ -27,6 +28,7 @@ export function App() {
   const [project, setProject] = useState<AlbumMotionProject>(sampleProject);
   const [artwork, setArtwork] = useState<ArtworkSource>(sampleArtwork);
   const [artworkSourceName, setArtworkSourceName] = useState('Hosted URL');
+  const destination = getDestinationProfile(project.destination);
 
   function updateProject(changes: Partial<Pick<AlbumMotionProject, 'speed' | 'intensity'>>) {
     setProject((current) => ({
@@ -62,6 +64,10 @@ export function App() {
     setArtworkSourceName(`Local file: ${file.name}`);
   }
 
+  function updateDestination(destinationId: DestinationProfileId) {
+    setProject((current) => ({ ...current, destination: destinationId }));
+  }
+
   return (
     <main className="editor-shell">
       <section className="editor-intro">
@@ -70,7 +76,12 @@ export function App() {
         <p className="intro-copy">A browser preview that can later be embedded inside a distributor’s upload flow.</p>
       </section>
 
-      <PreviewCanvas artwork={artwork} speed={project.speed} intensity={project.intensity} />
+      <PreviewCanvas
+        artwork={artwork}
+        speed={project.speed}
+        intensity={project.intensity}
+        aspectRatio={destination.aspectRatio}
+      />
 
       <section className="editor-controls" aria-label="Motion controls">
         <div className="control-heading">
@@ -123,9 +134,24 @@ export function App() {
           </label>
         </fieldset>
 
+        <label className="destination-control">
+          <span>Destination profile</span>
+          <select
+            value={project.destination}
+            onChange={(event) => updateDestination(event.target.value as DestinationProfileId)}
+          >
+            {destinationProfiles.map((profile) => (
+              <option key={profile.id} value={profile.id}>{profile.name}</option>
+            ))}
+          </select>
+          <small>
+            {destination.aspectRatio.width}:{destination.aspectRatio.height} preview · {destination.output.width} × {destination.output.height} output
+          </small>
+        </label>
+
         <div className="project-summary">
           <span>Destination</span>
-          <strong>Spotify canvas</strong>
+          <strong>{destination.name}</strong>
           <span>Loop behavior</span>
           <strong>Continuous</strong>
         </div>

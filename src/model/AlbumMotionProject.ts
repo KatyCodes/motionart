@@ -1,4 +1,5 @@
 import type { ArtworkReference } from './ArtworkReference';
+import type { DestinationProfileId } from './DestinationProfile';
 
 export type MotionStyleId = 'drift';
 
@@ -7,7 +8,7 @@ export type LoopBehavior = 'loop';
 export interface AlbumMotionProject {
   schemaVersion: 1;
   artwork: ArtworkReference;
-  destination: 'spotify-v1';
+  destination: DestinationProfileId;
   motionStyle: MotionStyleId;
   speed: number;
   intensity: number;
@@ -20,7 +21,7 @@ export const sampleProject: AlbumMotionProject = {
     provider: 'demo',
     assetKey: 'sample-cover',
   },
-  destination: 'spotify-v1',
+  destination: 'spotify-canvas-v1',
   motionStyle: 'drift',
   speed: 1,
   intensity: 1,
