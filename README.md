@@ -25,6 +25,8 @@ The demo page is a small example host. The reusable editor receives all customer
 
 The host owns catalog data, artwork access, persistence, branding, and checkout. The editor owns motion controls, preview rendering, destination validation, and the structured purchase handoff.
 
+`serializeReleaseDraft` validates and converts the complete release to JSON for customer storage. `parseReleaseDraft` parses, migrates, and validates saved JSON before it enters the editor. The localhost demo uses `localStorage` only to demonstrate those host responsibilities; an actual distributor can use the same boundary with its database API.
+
 ## Run locally
 
 Requires Node.js 20.19+ or 22.12+.

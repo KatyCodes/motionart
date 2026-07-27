@@ -5,7 +5,10 @@ import { destinationProfiles } from './model/DestinationProfile';
 import type { HostBranding } from './model/HostBranding';
 import { createReleaseMotionDraft, type ReleaseMotionDraft } from './model/ReleaseMotionDraft';
 import type { ReleaseOrder } from './model/ReleaseOrder';
+import { parseReleaseDraft, serializeReleaseDraft } from './persistence/ReleaseDraftCodec';
 import type { ArtworkSource } from './preview/ArtworkSource';
+
+const demoStorageKey = 'album-motion-demo-release-v1';
 
 const hostedArtwork: ArtworkSource = {
   type: 'url',
@@ -73,6 +76,30 @@ export function App() {
     setHandoffMessage(`Host received ${result.purchaseItems.length} purchase item${result.purchaseItems.length === 1 ? '' : 's'}.`);
   }
 
+  function saveDraft() {
+    const json = serializeReleaseDraft({ schemaVersion: 1, release, motion: draft });
+    window.localStorage.setItem(demoStorageKey, json);
+    setHandoffMessage('Host saved this release draft.');
+  }
+
+  function restoreDraft() {
+    const json = window.localStorage.getItem(demoStorageKey);
+
+    if (!json) {
+      setHandoffMessage('No saved release draft was found.');
+      return;
+    }
+
+    try {
+      const saved = parseReleaseDraft(json);
+      setRelease(saved.release);
+      setDraft(saved.motion);
+      setHandoffMessage('Host restored the saved release draft.');
+    } catch (error) {
+      setHandoffMessage(error instanceof Error ? error.message : 'The saved release draft is invalid.');
+    }
+  }
+
   return (
     <div className="host-demo">
       <aside className="host-demo-toolbar" aria-label="Host integration demo">
@@ -82,6 +109,8 @@ export function App() {
         </div>
         <button type="button" onClick={useHostedUrl}>URL</button>
         <button type="button" onClick={useHostLoader}>Loader</button>
+        <button type="button" onClick={saveDraft}>Save draft</button>
+        <button type="button" onClick={restoreDraft}>Restore draft</button>
         <label>
           <span>Local file</span>
           <input type="file" accept="image/*" onChange={(event) => useLocalFile(event.target.files?.[0])} />
