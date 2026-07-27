@@ -22,6 +22,7 @@ export function PreviewCanvas({ artwork, speed, intensity, aspectRatio }: Previe
 
     if (!host) return;
 
+    setError(null);
     const preview = new PreviewEngine(host);
     previewRef.current = preview;
     let active = true;

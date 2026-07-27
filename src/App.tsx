@@ -1,14 +1,21 @@
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import sampleCoverUrl from './assets/sample-cover.svg';
 import { AlbumMotionEditor, type AlbumMotionEditorResult } from './editor/AlbumMotionEditor';
+import {
+  createHostEditorSession,
+  type HostLaunchConfig,
+} from './integration/HostLaunchConfig';
 import { destinationProfiles } from './model/DestinationProfile';
 import type { HostBranding } from './model/HostBranding';
-import { createReleaseMotionDraft, type ReleaseMotionDraft } from './model/ReleaseMotionDraft';
+import type { ReleaseMotionDraft } from './model/ReleaseMotionDraft';
 import type { ReleaseOrder } from './model/ReleaseOrder';
 import { parseReleaseDraft, serializeReleaseDraft } from './persistence/ReleaseDraftCodec';
 import type { ArtworkSource } from './preview/ArtworkSource';
 
 const demoStorageKey = 'album-motion-demo-release-v1';
+const exampleArtworkUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Buzz_Aldrin_on_the_Moon_with_the_American_Flag_MET_DP-15797-029.jpg/960px-Buzz_Aldrin_on_the_Moon_with_the_American_Flag_MET_DP-15797-029.jpg';
+
+type DemoDeliverable = 'apple-album' | 'spotify-track';
 
 const hostedArtwork: ArtworkSource = {
   type: 'url',
@@ -29,47 +36,76 @@ const hostLoadedArtwork: ArtworkSource = {
 };
 
 const demoBranding: HostBranding = {
-  hostName: 'Distributor demo',
+  hostName: 'CD Baby demo',
   productName: 'Motion Studio',
   accentColor: '#d3b9ff',
+  providerName: 'Company TBD',
 };
 
-const demoRelease: ReleaseOrder = {
-  schemaVersion: 1,
-  album: {
-    id: 'album-demo',
-    title: 'Night Drive',
-    artwork: { provider: 'demo', assetKey: 'sample-cover' },
-  },
-  tracks: [
-    { id: 'track-signal', title: 'Signal', artwork: { provider: 'demo', assetKey: 'signal-cover' } },
-    { id: 'track-afterglow', title: 'Afterglow', artwork: { provider: 'demo', assetKey: 'afterglow-cover' } },
-  ],
-  selections: { appleAlbum: false, spotifyTrackIds: [] },
-};
+const initialSession = createHostEditorSession(createDemoHostConfig('apple-album', hostedArtwork));
 
 export function App() {
-  const [release, setRelease] = useState<ReleaseOrder>(demoRelease);
-  const [draft, setDraft] = useState<ReleaseMotionDraft>(() => createReleaseMotionDraft(demoRelease));
-  const [artwork, setArtwork] = useState<ArtworkSource>(hostedArtwork);
-  const [artworkSourceName, setArtworkSourceName] = useState('Hosted URL');
+  const [session, setSession] = useState(initialSession);
+  const [release, setRelease] = useState<ReleaseOrder>(initialSession.release);
+  const [draft, setDraft] = useState<ReleaseMotionDraft>(initialSession.draft);
+  const [deliverable, setDeliverable] = useState<DemoDeliverable>('apple-album');
+  const [artworkSource, setArtworkSource] = useState<ArtworkSource>(hostedArtwork);
+  const [artworkSourceName, setArtworkSourceName] = useState('Bundled sample');
+  const [artworkUrl, setArtworkUrl] = useState(exampleArtworkUrl);
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
 
-  function useHostedUrl() {
-    setArtwork(hostedArtwork);
-    setArtworkSourceName('Hosted URL');
+  function launchFromHost(
+    nextDeliverable: DemoDeliverable,
+    nextArtwork: ArtworkSource,
+    sourceName: string,
+  ) {
+    const nextSession = createHostEditorSession(
+      createDemoHostConfig(nextDeliverable, nextArtwork),
+    );
+
+    setSession(nextSession);
+    setRelease(nextSession.release);
+    setDraft(nextSession.draft);
+    setDeliverable(nextDeliverable);
+    setArtworkSource(nextArtwork);
+    setArtworkSourceName(sourceName);
+    setHandoffMessage(
+      nextDeliverable === 'apple-album'
+        ? 'CD Baby supplied an album order. Apple Music was selected automatically.'
+        : 'CD Baby supplied a track order. Spotify was selected automatically.',
+    );
   }
 
   function useHostLoader() {
-    setArtwork(hostLoadedArtwork);
-    setArtworkSourceName('Host loader');
+    launchFromHost(deliverable, hostLoadedArtwork, 'Authenticated host loader');
+  }
+
+  function switchDeliverable(nextDeliverable: DemoDeliverable) {
+    launchFromHost(nextDeliverable, artworkSource, artworkSourceName);
+  }
+
+  function useArtworkUrl(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const url = artworkUrl.trim();
+
+    try {
+      const parsedUrl = new URL(url);
+
+      if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+        throw new Error('Unsupported URL protocol.');
+      }
+    } catch {
+      setHandoffMessage('Enter a complete image URL beginning with https:// or http://.');
+      return;
+    }
+
+    launchFromHost(deliverable, { type: 'url', url }, `Image URL: ${getUrlHost(url)}`);
   }
 
   function useLocalFile(file: File | undefined) {
     if (!file) return;
 
-    setArtwork({ type: 'blob', blob: file });
-    setArtworkSourceName(`Local file: ${file.name}`);
+    launchFromHost(deliverable, { type: 'blob', blob: file }, `Uploaded file: ${file.name}`);
   }
 
   function handleContinue(result: AlbumMotionEditorResult) {
@@ -103,16 +139,39 @@ export function App() {
   return (
     <div className="host-demo">
       <aside className="host-demo-toolbar" aria-label="Host integration demo">
-        <div>
-          <strong>Embedding host controls</strong>
-          <span>Artwork: {artworkSourceName}</span>
+        <div className="host-demo-heading">
+          <strong>CD Baby launch payload</strong>
+          <span>{deliverable === 'apple-album' ? 'Album → Apple Music' : 'Track → Spotify'} · {artworkSourceName}</span>
         </div>
-        <button type="button" onClick={useHostedUrl}>URL</button>
-        <button type="button" onClick={useHostLoader}>Loader</button>
+        <label className="host-demo-field">
+          <span>Incoming order</span>
+          <select
+            aria-label="Incoming order"
+            value={deliverable}
+            onChange={(event) => switchDeliverable(event.target.value as DemoDeliverable)}
+          >
+            <option value="apple-album">Album · Apple Music</option>
+            <option value="spotify-track">Track · Spotify</option>
+          </select>
+        </label>
+        <form className="host-url-form" onSubmit={useArtworkUrl}>
+          <label className="host-demo-field">
+            <span>Artwork URL</span>
+            <input
+              aria-label="Artwork URL"
+              type="url"
+              value={artworkUrl}
+              onChange={(event) => setArtworkUrl(event.target.value)}
+              placeholder="https://cdn.example/artwork.jpg"
+            />
+          </label>
+          <button type="submit">Launch with URL</button>
+        </form>
+        <button type="button" onClick={useHostLoader}>Use authenticated loader</button>
         <button type="button" onClick={saveDraft}>Save draft</button>
         <button type="button" onClick={restoreDraft}>Restore draft</button>
-        <label>
-          <span>Local file</span>
+        <label className="host-file-control">
+          <span>Launch with uploaded image</span>
           <input type="file" accept="image/*" onChange={(event) => useLocalFile(event.target.files?.[0])} />
         </label>
         {handoffMessage ? <output>{handoffMessage}</output> : null}
@@ -123,11 +182,47 @@ export function App() {
         draft={draft}
         release={release}
         destinationProfiles={destinationProfiles}
-        resolveArtwork={() => artwork}
+        resolveArtwork={session.resolveArtwork}
+        allowDeliverableChanges={false}
         onDraftChange={setDraft}
         onReleaseChange={setRelease}
         onContinue={handleContinue}
       />
     </div>
   );
+}
+
+function createDemoHostConfig(
+  deliverable: DemoDeliverable,
+  artworkSource: ArtworkSource,
+): HostLaunchConfig {
+  return {
+    schemaVersion: 1,
+    launchId: `demo-${deliverable}`,
+    album: {
+      id: 'album-night-drive',
+      title: 'Night Drive',
+      artwork: {
+        reference: { provider: 'cdbaby', assetKey: 'album-night-drive-cover' },
+        source: artworkSource,
+      },
+    },
+    tracks: [
+      {
+        id: 'track-signal',
+        title: 'Signal',
+        artwork: {
+          reference: { provider: 'cdbaby', assetKey: 'track-signal-cover' },
+          source: artworkSource,
+        },
+      },
+    ],
+    deliverables: deliverable === 'apple-album'
+      ? [{ kind: 'apple-album' }]
+      : [{ kind: 'spotify-track', trackId: 'track-signal' }],
+  };
+}
+
+function getUrlHost(url: string): string {
+  return new URL(url).host;
 }

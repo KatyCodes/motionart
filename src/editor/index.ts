@@ -10,6 +10,14 @@ export type { PurchaseItem, ReleaseOrder } from '../model/ReleaseOrder';
 export type { DeliverableTarget, ReleaseMotionDraft } from '../model/ReleaseMotionDraft';
 export type { ArtworkSource } from '../preview/ArtworkSource';
 export {
+  createHostEditorSession,
+  type HostAlbumConfig,
+  type HostArtworkConfig,
+  type HostEditorSession,
+  type HostLaunchConfig,
+  type HostTrackConfig,
+} from '../integration/HostLaunchConfig';
+export {
   parseReleaseDraft,
   serializeReleaseDraft,
   type SavedReleaseDraft,

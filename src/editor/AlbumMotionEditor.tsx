@@ -37,6 +37,7 @@ export interface AlbumMotionEditorProps {
   release: ReleaseOrder;
   destinationProfiles: readonly DestinationProfile[];
   resolveArtwork: (reference: ArtworkReference) => ArtworkSource;
+  allowDeliverableChanges?: boolean;
   onDraftChange: (draft: ReleaseMotionDraft) => void;
   onReleaseChange: (release: ReleaseOrder) => void;
   onContinue: (result: AlbumMotionEditorResult) => void;
@@ -48,6 +49,7 @@ export function AlbumMotionEditor({
   release,
   destinationProfiles,
   resolveArtwork,
+  allowDeliverableChanges = true,
   onDraftChange,
   onReleaseChange,
   onContinue,
@@ -100,7 +102,7 @@ export function AlbumMotionEditor({
       <section className="editor-intro">
         <div className="brand-lockup">
           {branding.logoUrl ? <img src={branding.logoUrl} alt={`${branding.hostName} logo`} /> : null}
-          <p className="eyebrow">{branding.hostName} · powered by Album Motion</p>
+          <p className="eyebrow">{branding.hostName} · powered by {branding.providerName ?? 'Company TBD'}</p>
         </div>
         <h1>{branding.productName}</h1>
         <p className="intro-copy">Create motion artwork for this release and choose where it will be delivered.</p>
@@ -168,8 +170,11 @@ export function AlbumMotionEditor({
           </small>
         </label>
 
-        <fieldset className="purchase-selection">
-          <legend>Choose deliverables</legend>
+        <fieldset className="purchase-selection" disabled={!allowDeliverableChanges}>
+          <legend>{allowDeliverableChanges ? 'Choose deliverables' : `Order supplied by ${branding.hostName}`}</legend>
+          {!allowDeliverableChanges
+            ? <p className="host-order-note">The purchased destination was selected automatically from the host configuration.</p>
+            : null}
           <label className="checkbox-control">
             <input
               type="checkbox"

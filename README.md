@@ -25,6 +25,41 @@ The demo page is a small example host. The reusable editor receives all customer
 
 The host owns catalog data, artwork access, persistence, branding, and checkout. The editor owns motion controls, preview rendering, destination validation, and the structured purchase handoff.
 
+### Host launch flow
+
+`createHostEditorSession` converts one customer launch configuration into the controlled `release`, `draft`, and `resolveArtwork` values required by the editor. CD Baby can request an Apple album, one or more Spotify tracks, or both. The requested deliverables are selected before the editor opens.
+
+```ts
+const session = createHostEditorSession({
+  schemaVersion: 1,
+  launchId: 'checkout-123',
+  album: {
+    id: 'album-1',
+    title: 'Night Drive',
+    artwork: {
+      reference: { provider: 'cdbaby', assetKey: 'album-1-cover' },
+      source: { type: 'url', url: temporaryPreviewUrl },
+    },
+  },
+  tracks: [{
+    id: 'track-1',
+    title: 'Signal',
+    artwork: {
+      reference: { provider: 'cdbaby', assetKey: 'track-1-cover' },
+      source: { type: 'blob', blob: uploadedFile },
+    },
+  }],
+  deliverables: [
+    { kind: 'apple-album' },
+    { kind: 'spotify-track', trackId: 'track-1' },
+  ],
+});
+```
+
+The runtime `source` can be a CORS-enabled URL, a browser `File`/`Blob`, or an authenticated loader function. Only the durable `reference` is copied into saved motion drafts, so signed URLs and uploaded file objects are not persisted accidentally.
+
+An image URL that displays in a normal browser tab is not necessarily canvas-safe. Its actual `GET` response must include an appropriate `Access-Control-Allow-Origin` header. If it does not, the embedding customer should supply an authenticated loader backed by its own server.
+
 `serializeReleaseDraft` validates and converts the complete release to JSON for customer storage. `parseReleaseDraft` parses, migrates, and validates saved JSON before it enters the editor. The localhost demo uses `localStorage` only to demonstrate those host responsibilities; an actual distributor can use the same boundary with its database API.
 
 ## Run locally

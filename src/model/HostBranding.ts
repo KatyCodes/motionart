@@ -2,6 +2,7 @@ export interface HostBranding {
   hostName: string;
   productName: string;
   accentColor: string;
+  providerName?: string;
   logoUrl?: string;
   supportUrl?: string;
 }

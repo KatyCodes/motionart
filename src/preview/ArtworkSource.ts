@@ -54,10 +54,21 @@ export async function decodeArtwork(
 async function resolveBlob(source: ArtworkSource, signal: AbortSignal): Promise<Blob> {
   switch (source.type) {
     case 'url': {
-      const response = await fetch(source.url, {
-        mode: 'cors',
-        signal,
-      });
+      let response: Response;
+
+      try {
+        response = await fetch(source.url, {
+          mode: 'cors',
+          signal,
+        });
+      } catch (error) {
+        if (signal.aborted) signal.throwIfAborted();
+
+        throw new Error(
+          'The browser could not fetch this artwork URL. The image host must allow cross-origin image requests (CORS), or the embedding host must provide the image through a loader.',
+          { cause: error },
+        );
+      }
 
       if (!response.ok) {
         throw new Error(`Artwork request failed with status ${response.status}.`);
