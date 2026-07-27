@@ -18,9 +18,9 @@ createRoot(root).render(
 
 ```ts
 <AlbumMotionEditor
-  project={project}
+  draft={draft}
   release={release}
-  onProjectChange={setProject}
+  onDraftChange={setDraft}
   onReleaseChange={setRelease}
 />
 ```
@@ -32,12 +32,12 @@ createRoot(root).render(
 ```ts
 export interface AlbumMotionEditorProps {
   branding: HostBranding;
-  project: AlbumMotionProject;
-  onProjectChange: (project: AlbumMotionProject) => void;
+  draft: ReleaseMotionDraft;
+  onDraftChange: (draft: ReleaseMotionDraft) => void;
 }
 ```
 
-The props interface is the integration contract. A callback such as `onProjectChange` is a function supplied by the host. The editor calls it with the updated project instead of deciding where that project should be stored.
+The props interface is the integration contract. A callback such as `onDraftChange` is a function supplied by the host. The editor calls it with the updated release draft instead of deciding where that draft should be stored. The draft holds one Apple album project and a separate project for every Spotify track.
 
 ## 4. `src/model/AlbumMotionProject.ts`: define the saved recipe
 

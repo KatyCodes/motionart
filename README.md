@@ -13,11 +13,11 @@ The demo page is a small example host. The reusable editor receives all customer
 ```tsx
 <AlbumMotionEditor
   branding={customerBranding}
-  artwork={artworkSource}
-  project={project}
+  draft={releaseMotionDraft}
   release={release}
   destinationProfiles={customerProfiles}
-  onProjectChange={saveProjectDraft}
+  resolveArtwork={resolveCustomerArtwork}
+  onDraftChange={saveReleaseMotionDraft}
   onReleaseChange={saveReleaseDraft}
   onContinue={startCustomerCheckout}
 />

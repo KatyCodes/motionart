@@ -1,12 +1,20 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { AlbumMotionProject } from '../model/AlbumMotionProject';
+import type { ArtworkReference } from '../model/ArtworkReference';
 import {
   resolveDestinationProfile,
   type DestinationProfile,
-  type DestinationProfileId,
 } from '../model/DestinationProfile';
 import { validateHostBranding, type HostBranding } from '../model/HostBranding';
 import { normalizeMotionControls } from '../model/MotionControls';
+import {
+  getDeliverableKey,
+  getDeliverableProject,
+  getSelectedDeliverables,
+  updateDeliverableProject,
+  type DeliverableTarget,
+  type ReleaseMotionDraft,
+} from '../model/ReleaseMotionDraft';
 import {
   getPurchaseItems,
   selectAppleAlbum,
@@ -18,44 +26,53 @@ import { PreviewCanvas } from '../PreviewCanvas';
 import type { ArtworkSource } from '../preview/ArtworkSource';
 
 export interface AlbumMotionEditorResult {
-  project: AlbumMotionProject;
+  draft: ReleaseMotionDraft;
   release: ReleaseOrder;
   purchaseItems: PurchaseItem[];
 }
 
 export interface AlbumMotionEditorProps {
   branding: HostBranding;
-  artwork: ArtworkSource;
-  project: AlbumMotionProject;
+  draft: ReleaseMotionDraft;
   release: ReleaseOrder;
   destinationProfiles: readonly DestinationProfile[];
-  onProjectChange: (project: AlbumMotionProject) => void;
+  resolveArtwork: (reference: ArtworkReference) => ArtworkSource;
+  onDraftChange: (draft: ReleaseMotionDraft) => void;
   onReleaseChange: (release: ReleaseOrder) => void;
   onContinue: (result: AlbumMotionEditorResult) => void;
 }
 
 export function AlbumMotionEditor({
   branding,
-  artwork,
-  project,
+  draft,
   release,
   destinationProfiles,
-  onProjectChange,
+  resolveArtwork,
+  onDraftChange,
   onReleaseChange,
   onContinue,
 }: AlbumMotionEditorProps) {
   validateHostBranding(branding);
+  const [activeDeliverableKey, setActiveDeliverableKey] = useState('apple-album');
+  const selectedDeliverables = getSelectedDeliverables(release);
+  const activeDeliverable = findActiveDeliverable(selectedDeliverables, activeDeliverableKey);
+  const project = getDeliverableProject(draft, activeDeliverable);
+  const artwork = resolveArtwork(project.artwork);
   const destination = resolveDestinationProfile(destinationProfiles, project.destination);
   const purchaseItems = getPurchaseItems(release);
 
   function updateProject(changes: Partial<Pick<AlbumMotionProject, 'speed' | 'intensity'>>) {
-    onProjectChange({
-      ...project,
-      ...normalizeMotionControls({
-        speed: changes.speed ?? project.speed,
-        intensity: changes.intensity ?? project.intensity,
-      }),
-    });
+    onDraftChange(updateDeliverableProject(
+      draft,
+      activeDeliverable,
+      {
+        ...project,
+        ...normalizeMotionControls({
+          speed: changes.speed ?? project.speed,
+          intensity: changes.intensity ?? project.intensity,
+        }),
+      },
+    ));
   }
 
   function surpriseMe() {
@@ -65,8 +82,14 @@ export function AlbumMotionEditor({
     });
   }
 
-  function updateDestination(destinationId: DestinationProfileId) {
-    onProjectChange({ ...project, destination: destinationId });
+  function updateAppleSelection(selected: boolean) {
+    onReleaseChange(selectAppleAlbum(release, selected));
+    if (selected) setActiveDeliverableKey('apple-album');
+  }
+
+  function updateSpotifySelection(trackId: string, selected: boolean) {
+    onReleaseChange(selectSpotifyTrack(release, trackId, selected));
+    if (selected) setActiveDeliverableKey(`spotify-track:${trackId}`);
   }
 
   return (
@@ -126,14 +149,22 @@ export function AlbumMotionEditor({
         </label>
 
         <label className="destination-control">
-          <span>Preview destination</span>
-          <select value={project.destination} onChange={(event) => updateDestination(event.target.value)}>
-            {destinationProfiles.map((profile) => (
-              <option key={profile.id} value={profile.id}>{profile.name}</option>
-            ))}
+          <span>Editing deliverable</span>
+          <select
+            value={getDeliverableKey(activeDeliverable)}
+            disabled={selectedDeliverables.length === 0}
+            onChange={(event) => setActiveDeliverableKey(event.target.value)}
+          >
+            {selectedDeliverables.length === 0
+              ? <option value="apple-album">Select a deliverable below</option>
+              : selectedDeliverables.map((target) => (
+                <option key={getDeliverableKey(target)} value={getDeliverableKey(target)}>
+                  {getDeliverableLabel(release, target)}
+                </option>
+              ))}
           </select>
           <small>
-            {destination.aspectRatio.width}:{destination.aspectRatio.height} preview · {formatDestinationRequirements(destination)}
+            {destination.name} · {destination.aspectRatio.width}:{destination.aspectRatio.height} · {formatDestinationRequirements(destination)}
           </small>
         </label>
 
@@ -143,7 +174,7 @@ export function AlbumMotionEditor({
             <input
               type="checkbox"
               checked={release.selections.appleAlbum}
-              onChange={(event) => onReleaseChange(selectAppleAlbum(release, event.target.checked))}
+              onChange={(event) => updateAppleSelection(event.target.checked)}
             />
             <span>
               <strong>Apple Music — {release.album.title}</strong>
@@ -157,7 +188,7 @@ export function AlbumMotionEditor({
                 <input
                   type="checkbox"
                   checked={release.selections.spotifyTrackIds.includes(track.id)}
-                  onChange={(event) => onReleaseChange(selectSpotifyTrack(release, track.id, event.target.checked))}
+                  onChange={(event) => updateSpotifySelection(track.id, event.target.checked)}
                 />
                 <span>{track.title}</span>
               </label>
@@ -178,7 +209,7 @@ export function AlbumMotionEditor({
           className="primary-button"
           type="button"
           disabled={purchaseItems.length === 0}
-          onClick={() => onContinue({ project, release, purchaseItems })}
+          onClick={() => onContinue({ draft, release, purchaseItems })}
         >
           Continue with {purchaseItems.length} item{purchaseItems.length === 1 ? '' : 's'}
         </button>
@@ -187,6 +218,22 @@ export function AlbumMotionEditor({
       </section>
     </main>
   );
+}
+
+function findActiveDeliverable(
+  selectedDeliverables: DeliverableTarget[],
+  activeKey: string,
+): DeliverableTarget {
+  return selectedDeliverables.find((target) => getDeliverableKey(target) === activeKey)
+    ?? selectedDeliverables[0]
+    ?? { kind: 'apple-album' };
+}
+
+function getDeliverableLabel(release: ReleaseOrder, target: DeliverableTarget): string {
+  if (target.kind === 'apple-album') return `Apple Music · ${release.album.title}`;
+
+  const track = release.tracks.find((candidate) => candidate.id === target.trackId);
+  return `Spotify · ${track?.title ?? target.trackId}`;
 }
 
 function formatDestinationRequirements(destination: DestinationProfile): string {

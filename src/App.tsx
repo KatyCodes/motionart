@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import sampleCoverUrl from './assets/sample-cover.svg';
 import { AlbumMotionEditor, type AlbumMotionEditorResult } from './editor/AlbumMotionEditor';
-import { sampleProject, type AlbumMotionProject } from './model/AlbumMotionProject';
 import { destinationProfiles } from './model/DestinationProfile';
 import type { HostBranding } from './model/HostBranding';
+import { createReleaseMotionDraft, type ReleaseMotionDraft } from './model/ReleaseMotionDraft';
 import type { ReleaseOrder } from './model/ReleaseOrder';
 import type { ArtworkSource } from './preview/ArtworkSource';
 
@@ -46,8 +46,8 @@ const demoRelease: ReleaseOrder = {
 };
 
 export function App() {
-  const [project, setProject] = useState<AlbumMotionProject>(sampleProject);
   const [release, setRelease] = useState<ReleaseOrder>(demoRelease);
+  const [draft, setDraft] = useState<ReleaseMotionDraft>(() => createReleaseMotionDraft(demoRelease));
   const [artwork, setArtwork] = useState<ArtworkSource>(hostedArtwork);
   const [artworkSourceName, setArtworkSourceName] = useState('Hosted URL');
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
@@ -91,11 +91,11 @@ export function App() {
 
       <AlbumMotionEditor
         branding={demoBranding}
-        artwork={artwork}
-        project={project}
+        draft={draft}
         release={release}
         destinationProfiles={destinationProfiles}
-        onProjectChange={setProject}
+        resolveArtwork={() => artwork}
+        onDraftChange={setDraft}
         onReleaseChange={setRelease}
         onContinue={handleContinue}
       />
