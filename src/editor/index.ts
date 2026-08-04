@@ -5,6 +5,12 @@ export {
   type AlbumMotionEditorResult,
   type MotionStyleOption,
 } from './AlbumMotionEditor';
+export type { EditorWindowActions } from './EditorWindowControls';
+export {
+  transitionEditorWindow,
+  type EditorWindowAction,
+  type EditorWindowState,
+} from './EditorWindowState';
 export type { AlbumMotionProject, MotionStyleId } from '../model/AlbumMotionProject';
 export type { DestinationProfile } from '../model/DestinationProfile';
 export type { HostBranding } from '../model/HostBranding';

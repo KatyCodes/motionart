@@ -24,6 +24,10 @@ import {
 } from '../model/ReleaseOrder';
 import { PreviewCanvas } from '../PreviewCanvas';
 import type { ArtworkSource } from '../preview/ArtworkSource';
+import {
+  EditorWindowControls,
+  type EditorWindowActions,
+} from './EditorWindowControls';
 
 export interface AlbumMotionEditorResult {
   draft: ReleaseMotionDraft;
@@ -45,6 +49,7 @@ export interface AlbumMotionEditorProps {
   motionStyles?: readonly MotionStyleOption[];
   resolveArtwork: (reference: ArtworkReference) => ArtworkSource;
   allowDeliverableChanges?: boolean;
+  windowActions?: EditorWindowActions;
   onDraftChange: (draft: ReleaseMotionDraft) => void;
   onReleaseChange: (release: ReleaseOrder) => void;
   onContinue: (result: AlbumMotionEditorResult) => void;
@@ -58,6 +63,7 @@ export function AlbumMotionEditor({
   motionStyles = defaultMotionStyleOptions,
   resolveArtwork,
   allowDeliverableChanges = true,
+  windowActions,
   onDraftChange,
   onReleaseChange,
   onContinue,
@@ -110,6 +116,8 @@ export function AlbumMotionEditor({
       className="editor-shell"
       style={{ '--host-accent': branding.accentColor } as CSSProperties}
     >
+      {windowActions ? <EditorWindowControls {...windowActions} /> : null}
+
       <section className="editor-intro">
         <div className="brand-lockup">
           {branding.logoUrl ? <img src={branding.logoUrl} alt={`${branding.hostName} logo`} /> : null}

@@ -40,6 +40,7 @@ button, input, select { font: inherit; }
 .artist-view-label small { font-size: .68rem; }
 
 .editor-shell {
+  position: relative;
   width: min(1120px, 100%);
   min-height: 100vh;
   margin: 0 auto;
@@ -51,7 +52,18 @@ button, input, select { font: inherit; }
   background: radial-gradient(circle at 35% 25%, rgb(126 82 178 / 30%), transparent 34rem), #0b0a12;
 }
 
-.editor-intro { grid-column: 1 / -1; max-width: 650px; }
+.editor-window-controls { position: absolute; z-index: 2; top: clamp(1.5rem, 5vw, 4rem); right: clamp(1.5rem, 5vw, 4rem); display: flex; gap: .45rem; }
+.editor-window-button { display: grid; width: 2.2rem; height: 2.2rem; padding: 0; place-items: center; border: 1px solid rgb(255 255 255 / 13%); border-radius: 999px; color: rgb(247 242 255 / 68%); background: rgb(255 255 255 / 7%); cursor: pointer; font-size: 1.15rem; line-height: 1; transition: 150ms ease; }
+.editor-window-button:hover { border-color: rgb(255 255 255 / 28%); color: #fff; background: rgb(255 255 255 / 13%); transform: translateY(-1px); }
+.editor-window-button.is-exit:hover { border-color: rgb(255 126 143 / 40%); background: rgb(255 94 116 / 18%); }
+.editor-window-button:focus-visible { outline: 2px solid var(--host-accent, #d3b9ff); outline-offset: 2px; }
+.editor-window-placeholder { width: min(1120px, calc(100% - 3rem)); min-height: 18rem; margin: 1.5rem auto 0; display: flex; gap: 2rem; align-items: center; justify-content: space-between; padding: clamp(1.5rem, 5vw, 4rem); border: 1px solid rgb(255 255 255 / 12%); border-radius: 1.5rem; background: radial-gradient(circle at 20% 20%, rgb(126 82 178 / 24%), transparent 28rem), #15121f; }
+.editor-window-placeholder h2 { margin: .4rem 0 .7rem; }
+.editor-window-placeholder p:not(.eyebrow) { max-width: 42rem; margin-bottom: 0; color: rgb(247 242 255 / 62%); line-height: 1.55; }
+.editor-window-placeholder-actions { display: flex; flex: 0 0 auto; gap: .65rem; }
+.editor-window-placeholder-actions .primary-button, .editor-window-placeholder-actions .secondary-button { white-space: nowrap; }
+
+.editor-intro { grid-column: 1 / -1; max-width: 650px; padding-right: 5.5rem; }
 .brand-lockup { display: flex; gap: .65rem; align-items: center; margin-bottom: .35rem; }
 .brand-lockup img { width: 2rem; height: 2rem; object-fit: contain; }
 .eyebrow { margin: 0; color: var(--host-accent, #b99afa); font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
@@ -115,4 +127,6 @@ input[type='range'] { width: 100%; accent-color: #b99afa; }
   .host-demo-field, .host-demo-field input { width: 100%; }
   .editor-shell { grid-template-columns: 1fr; }
   .editor-intro { grid-column: auto; }
+  .editor-window-placeholder { align-items: stretch; flex-direction: column; }
+  .editor-window-placeholder-actions { align-self: flex-start; }
 }

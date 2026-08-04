@@ -2,6 +2,11 @@ import { useState, type FormEvent } from 'react';
 import sampleCoverUrl from './assets/sample-cover.svg';
 import { AlbumMotionEditor, type AlbumMotionEditorResult } from './editor/AlbumMotionEditor';
 import {
+  transitionEditorWindow,
+  type EditorWindowAction,
+  type EditorWindowState,
+} from './editor/EditorWindowState';
+import {
   createHostEditorSession,
   type HostLaunchConfig,
 } from './integration/HostLaunchConfig';
@@ -53,6 +58,11 @@ export function App() {
   const [artworkSourceName, setArtworkSourceName] = useState('Bundled sample');
   const [artworkUrl, setArtworkUrl] = useState(exampleArtworkUrl);
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
+  const [editorWindowState, setEditorWindowState] = useState<EditorWindowState>('open');
+
+  function updateEditorWindow(action: EditorWindowAction) {
+    setEditorWindowState((current) => transitionEditorWindow(current, action));
+  }
 
   function launchFromHost(
     nextDeliverable: DemoDeliverable,
@@ -69,6 +79,7 @@ export function App() {
     setDeliverable(nextDeliverable);
     setArtworkSource(nextArtwork);
     setArtworkSourceName(sourceName);
+    updateEditorWindow('restore');
     setHandoffMessage(
       nextDeliverable === 'apple-album'
         ? 'CD Baby supplied an album order. Apple Music was selected automatically.'
@@ -192,17 +203,57 @@ export function App() {
         <small>The reusable editor begins here.</small>
       </div>
 
-      <AlbumMotionEditor
-        branding={demoBranding}
-        draft={draft}
-        release={release}
-        destinationProfiles={destinationProfiles}
-        resolveArtwork={session.resolveArtwork}
-        allowDeliverableChanges={false}
-        onDraftChange={setDraft}
-        onReleaseChange={setRelease}
-        onContinue={handleContinue}
-      />
+      {editorWindowState === 'open' ? (
+        <AlbumMotionEditor
+          branding={demoBranding}
+          draft={draft}
+          release={release}
+          destinationProfiles={destinationProfiles}
+          resolveArtwork={session.resolveArtwork}
+          allowDeliverableChanges={false}
+          windowActions={{
+            onMinimize: () => updateEditorWindow('minimize'),
+            onExit: () => updateEditorWindow('exit'),
+          }}
+          onDraftChange={setDraft}
+          onReleaseChange={setRelease}
+          onContinue={handleContinue}
+        />
+      ) : (
+        <section className={`editor-window-placeholder is-${editorWindowState}`} aria-live="polite">
+          <div>
+            <p className="eyebrow">{demoBranding.hostName}</p>
+            <h2>
+              {editorWindowState === 'minimized'
+                ? `${demoBranding.productName} is minimized`
+                : `${demoBranding.productName} is closed`}
+            </h2>
+            <p>
+              {editorWindowState === 'minimized'
+                ? 'Your motion settings are still here when you are ready to continue.'
+                : 'This demo kept your draft in memory. In production, the customer host can navigate the artist back to its catalog or checkout.'}
+            </p>
+          </div>
+          <div className="editor-window-placeholder-actions">
+            <button
+              className="primary-button"
+              type="button"
+              onClick={() => updateEditorWindow('restore')}
+            >
+              {editorWindowState === 'minimized' ? 'Restore editor' : 'Open editor again'}
+            </button>
+            {editorWindowState === 'minimized' ? (
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => updateEditorWindow('exit')}
+              >
+                Exit
+              </button>
+            ) : null}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
