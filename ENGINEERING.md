@@ -19,6 +19,7 @@ GitHub Actions runs the same `npm run check` command for every pull request and 
 ## What to unit test
 
 - Test project rules, validation, destinations, motion math, and serialization as pure TypeScript.
+- Test external boundaries through small interfaces; the fake renderer exercises the same asynchronous contract a production backend client will implement.
 - Test what a caller can observe, rather than private implementation details.
 - Keep PixiJS canvas lifecycle and browser-only behavior in focused integration checks; do not mock the entire renderer in unit tests.
 

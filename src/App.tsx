@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import sampleCoverUrl from './assets/sample-cover.svg';
 import { AlbumMotionEditor, type AlbumMotionEditorResult } from './editor/AlbumMotionEditor';
 import {
@@ -17,8 +17,12 @@ import type { ReleaseOrder } from './model/ReleaseOrder';
 import { parseReleaseDraft, serializeReleaseDraft } from './persistence/ReleaseDraftCodec';
 import type { ArtworkSource } from './preview/ArtworkSource';
 import {
+  createFakeRenderService,
   createRenderRequest,
+  isRenderJobTerminal,
+  RenderJobStatus,
   RenderRequestReview,
+  type RenderJob,
   type RenderRequest,
 } from './render';
 
@@ -53,6 +57,7 @@ const demoBranding: HostBranding = {
 };
 
 const initialSession = createHostEditorSession(createDemoHostConfig('apple-album', hostedArtwork));
+const demoRenderService = createFakeRenderService();
 
 export function App() {
   const [session, setSession] = useState(initialSession);
@@ -65,7 +70,32 @@ export function App() {
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
   const [editorWindowState, setEditorWindowState] = useState<EditorWindowState>('open');
   const [reviewRequest, setReviewRequest] = useState<RenderRequest | null>(null);
+  const [renderJob, setRenderJob] = useState<RenderJob | null>(null);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!renderJob || isRenderJobTerminal(renderJob)) return;
+
+    let cancelled = false;
+    const pollTimer = window.setTimeout(() => {
+      void demoRenderService.get(renderJob.id)
+        .then((nextJob) => {
+          if (!cancelled) setRenderJob(nextJob);
+        })
+        .catch((error: unknown) => {
+          if (!cancelled) {
+            setCheckoutMessage(
+              error instanceof Error ? error.message : 'The render status could not be refreshed.',
+            );
+          }
+        });
+    }, 900);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(pollTimer);
+    };
+  }, [renderJob]);
 
   function updateEditorWindow(action: EditorWindowAction) {
     setEditorWindowState((current) => transitionEditorWindow(current, action));
@@ -93,6 +123,7 @@ export function App() {
     setArtworkSourceName(sourceName);
     updateEditorWindow('restore');
     setReviewRequest(null);
+    setRenderJob(null);
     setCheckoutMessage(null);
     setHandoffMessage(
       nextDeliverable === 'apple-album'
@@ -142,15 +173,39 @@ export function App() {
     });
 
     setReviewRequest(request);
+    setRenderJob(null);
     setCheckoutMessage(null);
     setHandoffMessage(`Host prepared ${request.deliverables.length} render deliverable${request.deliverables.length === 1 ? '' : 's'} for review.`);
   }
 
-  function handleCheckout(request: RenderRequest) {
-    const message = `CD Baby received render request ${request.launchId} with ${request.deliverables.length} deliverable${request.deliverables.length === 1 ? '' : 's'}.`;
+  async function handleCheckout(request: RenderRequest) {
+    setCheckoutMessage('CD Baby is submitting the paid render request.');
 
-    setCheckoutMessage(message);
-    setHandoffMessage(message);
+    try {
+      const job = await demoRenderService.submit(request);
+      const message = `CD Baby submitted render job ${job.id} with ${request.deliverables.length} deliverable${request.deliverables.length === 1 ? '' : 's'}.`;
+
+      setRenderJob(job);
+      setCheckoutMessage(null);
+      setHandoffMessage(message);
+    } catch (error) {
+      setCheckoutMessage(
+        error instanceof Error ? error.message : 'CD Baby could not submit the render request.',
+      );
+    }
+  }
+
+  function returnToEditor() {
+    setRenderJob(null);
+    setReviewRequest(null);
+    setCheckoutMessage(null);
+  }
+
+  function retryRender() {
+    if (!reviewRequest) return;
+
+    setRenderJob(null);
+    void handleCheckout(reviewRequest);
   }
 
   function saveDraft() {
@@ -172,6 +227,7 @@ export function App() {
       setRelease(saved.release);
       setDraft(saved.motion);
       setReviewRequest(null);
+      setRenderJob(null);
       setCheckoutMessage(null);
       setHandoffMessage('Host restored the saved release draft.');
     } catch (error) {
@@ -269,6 +325,15 @@ export function App() {
             ) : null}
           </div>
         </section>
+      ) : renderJob && reviewRequest ? (
+        <RenderJobStatus
+          branding={demoBranding}
+          job={renderJob}
+          request={reviewRequest}
+          windowActions={editorWindowActions}
+          onEdit={returnToEditor}
+          onRetry={retryRender}
+        />
       ) : reviewRequest ? (
         <RenderRequestReview
           branding={demoBranding}
@@ -277,6 +342,7 @@ export function App() {
           windowActions={editorWindowActions}
           onEdit={() => {
             setReviewRequest(null);
+            setRenderJob(null);
             setCheckoutMessage(null);
           }}
           onConfirm={handleCheckout}
