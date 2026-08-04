@@ -25,6 +25,10 @@ The demo page is a small example host. The reusable editor receives all customer
 
 The host owns catalog data, artwork access, persistence, branding, and checkout. The editor owns motion controls, preview rendering, destination validation, and the structured purchase handoff.
 
+`createRenderRequest` turns the editor result into a versioned, serializable checkout contract. Each selected album or track gets its own item containing a durable artwork reference, motion settings, destination snapshot, and concrete render dimensions, duration, and format. Those output values come from the customer's `DestinationProfile.renderDefaults`, so changing a platform or white-label configuration does not require changing the request builder.
+
+`RenderRequestReview` presents that contract to the artist before handing it back to the host's checkout callback. The demo confirms the handoff in memory; a production host would send the validated request to its checkout and, after payment, to Company TBD's future rendering service.
+
 ### Host launch flow
 
 `createHostEditorSession` converts one customer launch configuration into the controlled `release`, `draft`, and `resolveArtwork` values required by the editor. CD Baby can request an Apple album, one or more Spotify tracks, or both. The requested deliverables are selected before the editor opens.

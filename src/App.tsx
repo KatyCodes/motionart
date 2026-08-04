@@ -16,6 +16,11 @@ import type { ReleaseMotionDraft } from './model/ReleaseMotionDraft';
 import type { ReleaseOrder } from './model/ReleaseOrder';
 import { parseReleaseDraft, serializeReleaseDraft } from './persistence/ReleaseDraftCodec';
 import type { ArtworkSource } from './preview/ArtworkSource';
+import {
+  createRenderRequest,
+  RenderRequestReview,
+  type RenderRequest,
+} from './render';
 
 const demoStorageKey = 'album-motion-demo-release-v1';
 const exampleArtworkUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Buzz_Aldrin_on_the_Moon_with_the_American_Flag_MET_DP-15797-029.jpg/960px-Buzz_Aldrin_on_the_Moon_with_the_American_Flag_MET_DP-15797-029.jpg';
@@ -59,10 +64,17 @@ export function App() {
   const [artworkUrl, setArtworkUrl] = useState(exampleArtworkUrl);
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
   const [editorWindowState, setEditorWindowState] = useState<EditorWindowState>('open');
+  const [reviewRequest, setReviewRequest] = useState<RenderRequest | null>(null);
+  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
 
   function updateEditorWindow(action: EditorWindowAction) {
     setEditorWindowState((current) => transitionEditorWindow(current, action));
   }
+
+  const editorWindowActions = {
+    onMinimize: () => updateEditorWindow('minimize'),
+    onExit: () => updateEditorWindow('exit'),
+  };
 
   function launchFromHost(
     nextDeliverable: DemoDeliverable,
@@ -80,6 +92,8 @@ export function App() {
     setArtworkSource(nextArtwork);
     setArtworkSourceName(sourceName);
     updateEditorWindow('restore');
+    setReviewRequest(null);
+    setCheckoutMessage(null);
     setHandoffMessage(
       nextDeliverable === 'apple-album'
         ? 'CD Baby supplied an album order. Apple Music was selected automatically.'
@@ -120,7 +134,23 @@ export function App() {
   }
 
   function handleContinue(result: AlbumMotionEditorResult) {
-    setHandoffMessage(`Host received ${result.purchaseItems.length} purchase item${result.purchaseItems.length === 1 ? '' : 's'}.`);
+    const request = createRenderRequest({
+      launchId: session.launchId,
+      release: result.release,
+      draft: result.draft,
+      destinationProfiles,
+    });
+
+    setReviewRequest(request);
+    setCheckoutMessage(null);
+    setHandoffMessage(`Host prepared ${request.deliverables.length} render deliverable${request.deliverables.length === 1 ? '' : 's'} for review.`);
+  }
+
+  function handleCheckout(request: RenderRequest) {
+    const message = `CD Baby received render request ${request.launchId} with ${request.deliverables.length} deliverable${request.deliverables.length === 1 ? '' : 's'}.`;
+
+    setCheckoutMessage(message);
+    setHandoffMessage(message);
   }
 
   function saveDraft() {
@@ -141,6 +171,8 @@ export function App() {
       const saved = parseReleaseDraft(json);
       setRelease(saved.release);
       setDraft(saved.motion);
+      setReviewRequest(null);
+      setCheckoutMessage(null);
       setHandoffMessage('Host restored the saved release draft.');
     } catch (error) {
       setHandoffMessage(error instanceof Error ? error.message : 'The saved release draft is invalid.');
@@ -203,23 +235,7 @@ export function App() {
         <small>The reusable editor begins here.</small>
       </div>
 
-      {editorWindowState === 'open' ? (
-        <AlbumMotionEditor
-          branding={demoBranding}
-          draft={draft}
-          release={release}
-          destinationProfiles={destinationProfiles}
-          resolveArtwork={session.resolveArtwork}
-          allowDeliverableChanges={false}
-          windowActions={{
-            onMinimize: () => updateEditorWindow('minimize'),
-            onExit: () => updateEditorWindow('exit'),
-          }}
-          onDraftChange={setDraft}
-          onReleaseChange={setRelease}
-          onContinue={handleContinue}
-        />
-      ) : (
+      {editorWindowState !== 'open' ? (
         <section className={`editor-window-placeholder is-${editorWindowState}`} aria-live="polite">
           <div>
             <p className="eyebrow">{demoBranding.hostName}</p>
@@ -253,6 +269,31 @@ export function App() {
             ) : null}
           </div>
         </section>
+      ) : reviewRequest ? (
+        <RenderRequestReview
+          branding={demoBranding}
+          request={reviewRequest}
+          statusMessage={checkoutMessage}
+          windowActions={editorWindowActions}
+          onEdit={() => {
+            setReviewRequest(null);
+            setCheckoutMessage(null);
+          }}
+          onConfirm={handleCheckout}
+        />
+      ) : (
+        <AlbumMotionEditor
+          branding={demoBranding}
+          draft={draft}
+          release={release}
+          destinationProfiles={destinationProfiles}
+          resolveArtwork={session.resolveArtwork}
+          allowDeliverableChanges={false}
+          windowActions={editorWindowActions}
+          onDraftChange={setDraft}
+          onReleaseChange={setRelease}
+          onContinue={handleContinue}
+        />
       )}
     </div>
   );

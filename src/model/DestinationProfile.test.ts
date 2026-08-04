@@ -37,6 +37,7 @@ describe('destination profiles', () => {
       aspectRatio: { width: 4, height: 5 },
       pixelRequirements: { minWidth: 1080, minHeight: 1350 },
       acceptedFormats: ['mp4'],
+      renderDefaults: { width: 1080, height: 1350, durationSeconds: 6, format: 'mp4' },
     };
 
     expect(resolveDestinationProfile([customProfile], 'client-video-v1')).toBe(customProfile);
@@ -49,6 +50,18 @@ describe('destination profiles', () => {
       aspectRatio: { width: 0, height: 1 },
       pixelRequirements: { minWidth: 1080, minHeight: 1080 },
       acceptedFormats: ['mp4'],
+      renderDefaults: { width: 1080, height: 1080, durationSeconds: 6, format: 'mp4' },
+    })).toThrow(RangeError);
+  });
+
+  it('rejects defaults that cannot satisfy the configured output', () => {
+    expect(() => validateDestinationProfile({
+      id: 'invalid-output-v1',
+      name: 'Invalid output',
+      aspectRatio: { width: 1, height: 1 },
+      pixelRequirements: { minWidth: 1080, minHeight: 1080 },
+      acceptedFormats: ['mp4'],
+      renderDefaults: { width: 720, height: 720, durationSeconds: 6, format: 'gif' },
     })).toThrow(RangeError);
   });
 });

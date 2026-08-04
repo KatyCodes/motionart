@@ -39,7 +39,25 @@ export interface AlbumMotionEditorProps {
 
 The props interface is the integration contract. A callback such as `onDraftChange` is a function supplied by the host. The editor calls it with the updated release draft instead of deciding where that draft should be stored. The draft holds one Apple album project and a separate project for every Spotify track.
 
-## 4. `src/model/AlbumMotionProject.ts`: define the saved recipe
+## 4. `src/render/RenderRequest.ts`: create the checkout contract
+
+```ts
+export interface RenderRequest {
+  schemaVersion: 1;
+  launchId: string;
+  deliverables: RenderDeliverable[];
+}
+```
+
+`createRenderRequest` converts the editable release draft into a self-contained description of the files to render. Each deliverable includes its durable artwork reference, motion recipe, destination, dimensions, duration, and format. It deliberately excludes temporary URLs and browser `File` objects.
+
+The `schemaVersion: 1` field is a literal type: the value must be exactly `1`. A future version can add a new contract without silently changing the meaning of requests already stored by a customer.
+
+## 5. `src/render/RenderRequestReview.tsx`: review before checkout
+
+This React component receives a validated `RenderRequest` through props. It displays the request but does not decide how checkout works. Its `onConfirm` callback returns the same structured request to the embedding host, keeping customer-specific payments outside the reusable editor.
+
+## 6. `src/model/AlbumMotionProject.ts`: define the saved recipe
 
 ```ts
 export interface AlbumMotionProject {
@@ -58,7 +76,7 @@ export type MotionStyleId = 'drift' | 'water';
 
 This is a union of string-literal types. A project may use exactly `'drift'` or `'water'`; a typo such as `'watre'` is rejected by TypeScript. We can add future effects to this union without accepting vague strings everywhere.
 
-## 5. `src/PreviewCanvas.tsx`: connect React to PixiJS
+## 7. `src/PreviewCanvas.tsx`: connect React to PixiJS
 
 ```ts
 const previewRef = useRef<PreviewEngine | null>(null);
@@ -77,7 +95,7 @@ useEffect(() => {
 
 `useEffect` runs after React puts the component on the page. The returned function is cleanup: React calls it when the preview is removed or its artwork source changes. `void` here deliberately ignores the promise returned by the asynchronous `start()` method; errors are handled with `.catch(...)` in the real code.
 
-## 6. `src/preview/PreviewEngine.ts`: draw, not interface
+## 8. `src/preview/PreviewEngine.ts`: draw, not interface
 
 ```ts
 setMotionSettings(motionStyle: MotionStyleId, settings: DriftSettings): void {
@@ -89,7 +107,7 @@ setMotionSettings(motionStyle: MotionStyleId, settings: DriftSettings): void {
 
 This public method accepts a permitted effect ID plus a typed settings object and redraws the artwork. `: void` says that the method performs an action but does not return a result.
 
-## 7. `DriftAnimation.ts` and `WaterAnimation.ts`: keep animation math pure
+## 9. `DriftAnimation.ts` and `WaterAnimation.ts`: keep animation math pure
 
 ```ts
 export function getDriftFrame(timeSeconds: number, settings: DriftSettings): DriftFrame
