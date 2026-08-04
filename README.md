@@ -82,6 +82,8 @@ For an explanation of the TypeScript and React files in this proof of concept, s
 
 For the testing workflow and engineering practices, see [ENGINEERING.md](./ENGINEERING.md).
 
+For the future backend endpoint and authentication contract, see [RENDER-SERVICE.md](./RENDER-SERVICE.md).
+
 ```bash
 npm install
 npm run dev

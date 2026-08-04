@@ -13,6 +13,7 @@ export {
 export {
   createSubmittedRenderJob,
   isRenderJobTerminal,
+  validateRenderJob,
   type RenderJob,
   type RenderJobFailure,
   type RenderJobOutput,
@@ -26,4 +27,11 @@ export {
   createFakeRenderService,
   type FakeRenderServiceOptions,
   type RenderService,
+  type RenderServiceRequestOptions,
 } from './RenderService';
+export {
+  createHttpRenderService,
+  type HttpRenderServiceOptions,
+  type RenderFetch,
+  RenderServiceHttpError,
+} from './HttpRenderService';

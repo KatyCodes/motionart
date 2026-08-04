@@ -91,6 +91,67 @@ export function isRenderJobTerminal(job: RenderJob): boolean {
   return job.status === 'completed' || job.status === 'failed';
 }
 
+export function validateRenderJob(value: unknown): asserts value is RenderJob {
+  const job = requireRecord(value, 'Render job');
+
+  if (job.schemaVersion !== 1) {
+    throw new RangeError('Unsupported render job schema version.');
+  }
+
+  requireText(job.id, 'job ID');
+  requireText(job.launchId, 'launch ID');
+  requireText(job.submittedAt, 'submitted timestamp');
+  requireText(job.updatedAt, 'updated timestamp');
+
+  if (!isRenderJobState(job.status)) {
+    throw new RangeError('Render job has an unsupported status.');
+  }
+
+  const progress = requireRecord(job.progress, 'Render job progress');
+  requireNonNegativeInteger(progress.completed, 'completed progress');
+  requirePositiveInteger(progress.total, 'total progress');
+
+  if (progress.completed > progress.total) {
+    throw new RangeError('Render job completed progress cannot exceed its total.');
+  }
+
+  if (!Array.isArray(job.outputs)) {
+    throw new TypeError('Render job outputs must be an array.');
+  }
+
+  const outputIds = new Set<string>();
+  for (const value of job.outputs) {
+    const output = requireRecord(value, 'Render job output');
+    requireText(output.deliverableId, 'output deliverable ID');
+    requireText(output.fileName, 'output file name');
+
+    const deliverableId = output.deliverableId as string;
+    if (outputIds.has(deliverableId)) {
+      throw new RangeError(`Render job has a duplicate output: ${deliverableId}`);
+    }
+
+    outputIds.add(deliverableId);
+  }
+
+  if (job.failure !== null) {
+    const failure = requireRecord(job.failure, 'Render job failure');
+    requireText(failure.code, 'failure code');
+    requireText(failure.message, 'failure message');
+
+    if (typeof failure.retryable !== 'boolean') {
+      throw new TypeError('Render job failure retryable must be a boolean.');
+    }
+  }
+
+  validateStateShape(
+    job.status,
+    progress.completed as number,
+    progress.total as number,
+    job.outputs.length,
+    job.failure,
+  );
+}
+
 function createOutputs(request: RenderRequest): RenderJobOutput[] {
   const fileNameCounts = new Map<string, number>();
 
@@ -118,5 +179,67 @@ function slugify(value: string): string {
 function requireStatus(job: RenderJob, expected: RenderJobState): void {
   if (job.status !== expected) {
     throw new Error(`Cannot transition render job ${job.id} from ${job.status}; expected ${expected}.`);
+  }
+}
+
+function validateStateShape(
+  status: RenderJobState,
+  completed: number,
+  total: number,
+  outputCount: number,
+  failure: unknown,
+): void {
+  if (status === 'completed') {
+    if (completed !== total || outputCount !== total || failure !== null) {
+      throw new RangeError('A completed render job must contain every output and no failure.');
+    }
+    return;
+  }
+
+  if (status === 'failed') {
+    if (failure === null) {
+      throw new RangeError('A failed render job requires failure details.');
+    }
+    return;
+  }
+
+  if (outputCount !== 0 || failure !== null) {
+    throw new RangeError('An active render job cannot contain outputs or failure details.');
+  }
+
+  if (status === 'submitted' && completed !== 0) {
+    throw new RangeError('A submitted render job cannot have completed progress.');
+  }
+}
+
+function isRenderJobState(value: unknown): value is RenderJobState {
+  return value === 'submitted'
+    || value === 'processing'
+    || value === 'completed'
+    || value === 'failed';
+}
+
+function requireRecord(value: unknown, label: string): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new TypeError(`${label} must be an object.`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function requireText(value: unknown, label: string): asserts value is string {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new RangeError(`Render job requires a ${label}.`);
+  }
+}
+
+function requireNonNegativeInteger(value: unknown, label: string): asserts value is number {
+  if (!Number.isInteger(value) || (value as number) < 0) {
+    throw new RangeError(`Render job ${label} must be a non-negative integer.`);
+  }
+}
+
+function requirePositiveInteger(value: unknown, label: string): asserts value is number {
+  if (!Number.isInteger(value) || (value as number) <= 0) {
+    throw new RangeError(`Render job ${label} must be a positive integer.`);
   }
 }

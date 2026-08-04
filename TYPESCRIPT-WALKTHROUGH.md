@@ -57,7 +57,24 @@ The `schemaVersion: 1` field is a literal type: the value must be exactly `1`. A
 
 This React component receives a validated `RenderRequest` through props. It displays the request but does not decide how checkout works. Its `onConfirm` callback returns the same structured request to the embedding host, keeping customer-specific payments outside the reusable editor.
 
-## 6. `src/model/AlbumMotionProject.ts`: define the saved recipe
+## 6. `RenderJob.ts` and `RenderService.ts`: model asynchronous work
+
+`RenderJob` is a discriminated state model for submitted, processing, completed, and failed work. Transition functions enforce the legal order. `RenderService` is a small interface with asynchronous `submit` and `get` methods, so React does not need to know whether a job comes from the demo or a real server.
+
+The fake service implements that same interface in memory. It is useful for tests and the localhost demonstration, but it is not imported by the reusable editor.
+
+## 7. `HttpRenderService.ts`: adapt the interface to HTTP
+
+```ts
+export interface RenderService {
+  submit(request: RenderRequest, options?: RenderServiceRequestOptions): Promise<RenderJob>;
+  get(jobId: string, options?: RenderServiceRequestOptions): Promise<RenderJob>;
+}
+```
+
+The HTTP adapter turns those method calls into `POST /render-jobs` and `GET /render-jobs/{id}` requests. Its `getHeaders` callback can provide fresh authentication for each request. Responses begin as `unknown` because TypeScript cannot guarantee that a remote server returned valid data; `validateRenderJob` checks them before the adapter returns a typed `RenderJob`.
+
+## 8. `src/model/AlbumMotionProject.ts`: define the saved recipe
 
 ```ts
 export interface AlbumMotionProject {
@@ -76,7 +93,7 @@ export type MotionStyleId = 'drift' | 'water';
 
 This is a union of string-literal types. A project may use exactly `'drift'` or `'water'`; a typo such as `'watre'` is rejected by TypeScript. We can add future effects to this union without accepting vague strings everywhere.
 
-## 7. `src/PreviewCanvas.tsx`: connect React to PixiJS
+## 9. `src/PreviewCanvas.tsx`: connect React to PixiJS
 
 ```ts
 const previewRef = useRef<PreviewEngine | null>(null);
@@ -95,7 +112,7 @@ useEffect(() => {
 
 `useEffect` runs after React puts the component on the page. The returned function is cleanup: React calls it when the preview is removed or its artwork source changes. `void` here deliberately ignores the promise returned by the asynchronous `start()` method; errors are handled with `.catch(...)` in the real code.
 
-## 8. `src/preview/PreviewEngine.ts`: draw, not interface
+## 10. `src/preview/PreviewEngine.ts`: draw, not interface
 
 ```ts
 setMotionSettings(motionStyle: MotionStyleId, settings: DriftSettings): void {
@@ -107,7 +124,7 @@ setMotionSettings(motionStyle: MotionStyleId, settings: DriftSettings): void {
 
 This public method accepts a permitted effect ID plus a typed settings object and redraws the artwork. `: void` says that the method performs an action but does not return a result.
 
-## 9. `DriftAnimation.ts` and `WaterAnimation.ts`: keep animation math pure
+## 11. `DriftAnimation.ts` and `WaterAnimation.ts`: keep animation math pure
 
 ```ts
 export function getDriftFrame(timeSeconds: number, settings: DriftSettings): DriftFrame

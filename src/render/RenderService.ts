@@ -8,8 +8,12 @@ import {
 import { validateRenderRequest, type RenderRequest } from './RenderRequest';
 
 export interface RenderService {
-  submit(request: RenderRequest): Promise<RenderJob>;
-  get(jobId: string): Promise<RenderJob>;
+  submit(request: RenderRequest, options?: RenderServiceRequestOptions): Promise<RenderJob>;
+  get(jobId: string, options?: RenderServiceRequestOptions): Promise<RenderJob>;
+}
+
+export interface RenderServiceRequestOptions {
+  signal?: AbortSignal;
 }
 
 export interface FakeRenderServiceOptions {
