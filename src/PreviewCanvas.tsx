@@ -48,7 +48,12 @@ export function PreviewCanvas({ artwork, motionStyle, speed, intensity, aspectRa
 
   return (
     <div className="preview-frame" style={{ aspectRatio: `${aspectRatio.width} / ${aspectRatio.height}` }}>
-      <div className="preview-canvas" ref={hostRef} aria-label="Animated album artwork preview" />
+      <div
+        className="preview-canvas"
+        ref={hostRef}
+        role="img"
+        aria-label="Animated album artwork preview"
+      />
       {error ? <p className="preview-error">{error}</p> : null}
     </div>
   );

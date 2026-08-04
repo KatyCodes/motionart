@@ -109,9 +109,6 @@ function validateMotionDraft(value: unknown, release: ReleaseOrder): asserts val
 
   validateMotionProject(motion.appleAlbum, 'Apple album motion project');
   const appleProject = motion.appleAlbum as AlbumMotionProject;
-  if (appleProject.destination !== 'apple-music-cover-art-v1') {
-    throw new RangeError('Apple album motion project has the wrong destination.');
-  }
   validateMatchingArtwork(appleProject.artwork, release.album.artwork, 'Apple album');
 
   const spotifyProjects = requireRecord(motion.spotifyTracks, 'Spotify motion projects');
@@ -121,9 +118,6 @@ function validateMotionDraft(value: unknown, release: ReleaseOrder): asserts val
 
     validateMotionProject(project, `Spotify track ${track.id} motion project`);
     const typedProject = project as AlbumMotionProject;
-    if (typedProject.destination !== 'spotify-canvas-v1') {
-      throw new RangeError(`Spotify track ${track.id} motion project has the wrong destination.`);
-    }
     validateMatchingArtwork(typedProject.artwork, track.artwork, `Spotify track ${track.id}`);
   }
 }

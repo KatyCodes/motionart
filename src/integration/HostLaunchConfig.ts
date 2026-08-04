@@ -1,5 +1,9 @@
 import type { ArtworkReference } from '../model/ArtworkReference';
 import {
+  defaultReleaseDestinationProfileIds,
+  type ReleaseDestinationProfileIds,
+} from '../model/DestinationProfile';
+import {
   createReleaseMotionDraft,
   type DeliverableTarget,
   type ReleaseMotionDraft,
@@ -30,13 +34,24 @@ export interface HostTrackConfig {
   artwork: HostArtworkConfig;
 }
 
-export interface HostLaunchConfig {
-  schemaVersion: 1;
+interface HostLaunchConfigBase {
   launchId: string;
   album: HostAlbumConfig;
   tracks: HostTrackConfig[];
   deliverables: DeliverableTarget[];
 }
+
+/** Kept so an existing integration continues to receive the built-in defaults. */
+export interface HostLaunchConfigV1 extends HostLaunchConfigBase {
+  schemaVersion: 1;
+}
+
+export interface HostLaunchConfigV2 extends HostLaunchConfigBase {
+  schemaVersion: 2;
+  destinationProfileIds: ReleaseDestinationProfileIds;
+}
+
+export type HostLaunchConfig = HostLaunchConfigV1 | HostLaunchConfigV2;
 
 export interface HostEditorSession {
   launchId: string;
@@ -48,6 +63,9 @@ export interface HostEditorSession {
 /** Converts a customer launch payload into the editor's controlled state. */
 export function createHostEditorSession(config: HostLaunchConfig): HostEditorSession {
   validateLaunchConfig(config);
+  const destinationProfileIds = config.schemaVersion === 2
+    ? config.destinationProfileIds
+    : defaultReleaseDestinationProfileIds;
 
   const spotifyTrackIds = config.deliverables
     .filter((target): target is Extract<DeliverableTarget, { kind: 'spotify-track' }> => (
@@ -76,7 +94,7 @@ export function createHostEditorSession(config: HostLaunchConfig): HostEditorSes
   return {
     launchId: config.launchId,
     release,
-    draft: createReleaseMotionDraft(release),
+    draft: createReleaseMotionDraft(release, destinationProfileIds),
     resolveArtwork(reference) {
       const source = artworkSources.get(getArtworkReferenceKey(reference));
 
@@ -92,8 +110,17 @@ export function createHostEditorSession(config: HostLaunchConfig): HostEditorSes
 }
 
 function validateLaunchConfig(config: HostLaunchConfig): void {
+  if (config.schemaVersion !== 1 && config.schemaVersion !== 2) {
+    throw new RangeError('Unsupported host launch schema version.');
+  }
+
   requireText(config.launchId, 'launch ID');
   validateCatalogItem(config.album, 'album');
+
+  if (config.schemaVersion === 2) {
+    requireText(config.destinationProfileIds.appleAlbum, 'Apple destination profile ID');
+    requireText(config.destinationProfileIds.spotifyTrack, 'Spotify destination profile ID');
+  }
 
   if (config.deliverables.length === 0) {
     throw new RangeError('The host launch must request at least one deliverable.');

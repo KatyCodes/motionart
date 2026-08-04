@@ -5,7 +5,8 @@ export interface EditorWindowActions {
 
 export function EditorWindowControls({ onMinimize, onExit }: EditorWindowActions) {
   return (
-    <div className="editor-window-controls" role="group" aria-label="Editor window controls">
+    <fieldset className="editor-window-controls">
+      <legend className="visually-hidden">Editor window controls</legend>
       <button
         className="editor-window-button"
         type="button"
@@ -24,6 +25,6 @@ export function EditorWindowControls({ onMinimize, onExit }: EditorWindowActions
       >
         <span aria-hidden="true">×</span>
       </button>
-    </div>
+    </fieldset>
   );
 }

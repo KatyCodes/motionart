@@ -23,8 +23,8 @@ export interface ReleaseSelections {
 }
 
 export type PurchaseItem =
-  | { kind: 'apple-album'; albumId: string; profileId: 'apple-music-cover-art-v1' }
-  | { kind: 'spotify-track'; trackId: string; profileId: 'spotify-canvas-v1' };
+  | { kind: 'apple-album'; albumId: string }
+  | { kind: 'spotify-track'; trackId: string };
 
 export function selectAppleAlbum(order: ReleaseOrder, selected: boolean): ReleaseOrder {
   return {
@@ -54,12 +54,11 @@ export function selectSpotifyTrack(order: ReleaseOrder, trackId: string, selecte
 
 export function getPurchaseItems(order: ReleaseOrder): PurchaseItem[] {
   const appleItem: PurchaseItem[] = order.selections.appleAlbum
-    ? [{ kind: 'apple-album', albumId: order.album.id, profileId: 'apple-music-cover-art-v1' }]
+    ? [{ kind: 'apple-album', albumId: order.album.id }]
     : [];
   const spotifyItems: PurchaseItem[] = order.selections.spotifyTrackIds.map((trackId) => ({
     kind: 'spotify-track',
     trackId,
-    profileId: 'spotify-canvas-v1',
   }));
 
   return [...appleItem, ...spotifyItems];

@@ -32,6 +32,16 @@ describe('release motion drafts', () => {
     expect(draft.spotifyTracks['track-2'].artwork.assetKey).toBe('afterglow-art');
   });
 
+  it('uses destination profiles supplied by the embedding host', () => {
+    const draft = createReleaseMotionDraft(release, {
+      appleAlbum: 'customer-apple-v2',
+      spotifyTrack: 'customer-spotify-v2',
+    });
+
+    expect(draft.appleAlbum.destination).toBe('customer-apple-v2');
+    expect(draft.spotifyTracks['track-1'].destination).toBe('customer-spotify-v2');
+  });
+
   it('updates one track without changing Apple or another track', () => {
     const draft = createReleaseMotionDraft(release);
     const target: DeliverableTarget = { kind: 'spotify-track', trackId: 'track-1' };

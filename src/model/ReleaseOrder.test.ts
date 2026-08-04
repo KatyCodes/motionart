@@ -25,7 +25,7 @@ describe('release purchase selections', () => {
     const selected = selectAppleAlbum(release, true);
 
     expect(getPurchaseItems(selected)).toEqual([
-      { kind: 'apple-album', albumId: 'album-1', profileId: 'apple-music-cover-art-v1' },
+      { kind: 'apple-album', albumId: 'album-1' },
     ]);
   });
 
@@ -34,8 +34,8 @@ describe('release purchase selections', () => {
     const selected = selectSpotifyTrack(withFirstTrack, 'track-2', true);
 
     expect(getPurchaseItems(selected)).toEqual([
-      { kind: 'spotify-track', trackId: 'track-1', profileId: 'spotify-canvas-v1' },
-      { kind: 'spotify-track', trackId: 'track-2', profileId: 'spotify-canvas-v1' },
+      { kind: 'spotify-track', trackId: 'track-1' },
+      { kind: 'spotify-track', trackId: 'track-2' },
     ]);
   });
 

@@ -1,6 +1,10 @@
 import type { AlbumMotionProject } from './AlbumMotionProject';
 import type { ArtworkReference } from './ArtworkReference';
-import type { DestinationProfileId } from './DestinationProfile';
+import {
+  defaultReleaseDestinationProfileIds,
+  type DestinationProfileId,
+  type ReleaseDestinationProfileIds,
+} from './DestinationProfile';
 import type { ReleaseOrder } from './ReleaseOrder';
 
 export interface ReleaseMotionDraft {
@@ -13,14 +17,17 @@ export type DeliverableTarget =
   | { kind: 'apple-album' }
   | { kind: 'spotify-track'; trackId: string };
 
-export function createReleaseMotionDraft(release: ReleaseOrder): ReleaseMotionDraft {
+export function createReleaseMotionDraft(
+  release: ReleaseOrder,
+  destinationProfileIds: ReleaseDestinationProfileIds = defaultReleaseDestinationProfileIds,
+): ReleaseMotionDraft {
   return {
     schemaVersion: 1,
-    appleAlbum: createMotionProject(release.album.artwork, 'apple-music-cover-art-v1'),
+    appleAlbum: createMotionProject(release.album.artwork, destinationProfileIds.appleAlbum),
     spotifyTracks: Object.fromEntries(
       release.tracks.map((track) => [
         track.id,
-        createMotionProject(track.artwork, 'spotify-canvas-v1'),
+        createMotionProject(track.artwork, destinationProfileIds.spotifyTrack),
       ]),
     ),
   };

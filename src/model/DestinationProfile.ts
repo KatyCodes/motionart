@@ -33,6 +33,17 @@ export type BuiltInDestinationProfileId =
 /** Host applications may add their own stable, versioned profile IDs. */
 export type DestinationProfileId = string;
 
+/** The host chooses one profile per product family; the draft stores that choice. */
+export interface ReleaseDestinationProfileIds {
+  appleAlbum: DestinationProfileId;
+  spotifyTrack: DestinationProfileId;
+}
+
+export const defaultReleaseDestinationProfileIds: ReleaseDestinationProfileIds = {
+  appleAlbum: 'apple-music-cover-art-v1',
+  spotifyTrack: 'spotify-canvas-v1',
+};
+
 export const destinationProfiles: readonly DestinationProfile[] = [
   {
     id: 'spotify-canvas-v1',

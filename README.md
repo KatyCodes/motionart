@@ -35,8 +35,12 @@ The host owns catalog data, artwork access, persistence, branding, and checkout.
 
 ```ts
 const session = createHostEditorSession({
-  schemaVersion: 1,
+  schemaVersion: 2,
   launchId: 'checkout-123',
+  destinationProfileIds: {
+    appleAlbum: 'apple-music-cover-art-v1',
+    spotifyTrack: 'spotify-canvas-v1',
+  },
   album: {
     id: 'album-1',
     title: 'Night Drive',

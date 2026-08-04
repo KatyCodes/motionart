@@ -6,6 +6,14 @@ For a behavior change, write one small failing unit test first. Implement only e
 
 Use `npm test` for a single full test run, `npm run test:watch` while developing, and `npm run check` before committing.
 
+## Automated code quality
+
+`npm run lint` runs Biome's recommended TypeScript, React, accessibility, and correctness rules. React hook dependency and hook-order rules are explicitly required because mistakes in those areas can create stale state or inconsistent renders.
+
+Use `npm run lint:fix` for safe automatic lint fixes and `npm run format` when you intentionally want to format the project. The all-in-one `npm run check` command runs environment checks, linting, tests, TypeScript, and the production build.
+
+Biome is used instead of ESLint because the current TypeScript 7 compiler is newer than the TypeScript range supported by the current `typescript-eslint` parser. We do not force unsupported peer dependencies or downgrade the compiler solely for tooling.
+
 GitHub Actions runs the same `npm run check` command for every pull request and for changes merged to `main`.
 
 ## What to unit test

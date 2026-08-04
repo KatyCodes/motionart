@@ -12,7 +12,11 @@ export {
   type EditorWindowState,
 } from './EditorWindowState';
 export type { AlbumMotionProject, MotionStyleId } from '../model/AlbumMotionProject';
-export type { DestinationProfile } from '../model/DestinationProfile';
+export {
+  defaultReleaseDestinationProfileIds,
+  type DestinationProfile,
+  type ReleaseDestinationProfileIds,
+} from '../model/DestinationProfile';
 export type { HostBranding } from '../model/HostBranding';
 export type { PurchaseItem, ReleaseOrder } from '../model/ReleaseOrder';
 export type { DeliverableTarget, ReleaseMotionDraft } from '../model/ReleaseMotionDraft';
@@ -23,6 +27,8 @@ export {
   type HostArtworkConfig,
   type HostEditorSession,
   type HostLaunchConfig,
+  type HostLaunchConfigV1,
+  type HostLaunchConfigV2,
   type HostTrackConfig,
 } from '../integration/HostLaunchConfig';
 export {

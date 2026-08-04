@@ -127,7 +127,7 @@ export function App() {
     launchFromHost(deliverable, { type: 'url', url }, `Image URL: ${getUrlHost(url)}`);
   }
 
-  function useLocalFile(file: File | undefined) {
+  function handleLocalFile(file: File | undefined) {
     if (!file) return;
 
     launchFromHost(deliverable, { type: 'blob', blob: file }, `Uploaded file: ${file.name}`);
@@ -224,7 +224,7 @@ export function App() {
           <button type="button" onClick={restoreDraft}>Restore draft</button>
           <label className="host-file-control">
             <span>Launch with uploaded image</span>
-            <input type="file" accept="image/*" onChange={(event) => useLocalFile(event.target.files?.[0])} />
+            <input type="file" accept="image/*" onChange={(event) => handleLocalFile(event.target.files?.[0])} />
           </label>
           {handoffMessage ? <output>{handoffMessage}</output> : null}
         </aside>
@@ -304,8 +304,12 @@ function createDemoHostConfig(
   artworkSource: ArtworkSource,
 ): HostLaunchConfig {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     launchId: `demo-${deliverable}`,
+    destinationProfileIds: {
+      appleAlbum: 'apple-music-cover-art-v1',
+      spotifyTrack: 'spotify-canvas-v1',
+    },
     album: {
       id: 'album-night-drive',
       title: 'Night Drive',
