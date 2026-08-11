@@ -1,8 +1,10 @@
+import { readFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { defineConfig, type Plugin } from 'vite';
 import { createLocalRenderApi } from './dev/LocalRenderApi';
+import { renderDriftGifPreview } from './dev/render/DriftGifRenderer';
+import { createLocalFileRenderService } from './dev/render/LocalFileRenderService';
 import { demoRenderApiBaseUrl } from './src/integration/DemoRenderApiConfig';
-import { createFakeRenderService } from './src/render/RenderService';
 
 const maximumRequestBytes = 1_000_000;
 
@@ -11,7 +13,14 @@ export default defineConfig({
 });
 
 function localRenderApiPlugin(): Plugin {
-  const api = createLocalRenderApi(createFakeRenderService());
+  const renderService = createLocalFileRenderService({
+    apiBaseUrl: demoRenderApiBaseUrl,
+    async renderDeliverable(deliverable) {
+      const artwork = await resolveDemoArtwork(deliverable.artwork.provider);
+      return renderDriftGifPreview(deliverable, artwork);
+    },
+  });
+  const api = createLocalRenderApi(renderService, renderService);
 
   return {
     name: 'company-tbd-local-render-api',
@@ -31,7 +40,11 @@ function localRenderApiPlugin(): Plugin {
             path,
             body,
           });
-          writeJson(response, result.status, result.body);
+          if (result.body instanceof Uint8Array && result.contentType && result.fileName) {
+            writeBinary(response, result.status, result.body, result.contentType, result.fileName);
+          } else {
+            writeJson(response, result.status, result.body);
+          }
         } catch (error) {
           writeJson(response, 400, {
             code: 'INVALID_JSON',
@@ -41,6 +54,14 @@ function localRenderApiPlugin(): Plugin {
       });
     },
   };
+}
+
+async function resolveDemoArtwork(provider: string): Promise<Uint8Array> {
+  if (provider !== 'cdbaby') {
+    throw new RangeError(`The local preview renderer cannot resolve artwork from ${provider}.`);
+  }
+
+  return readFile(new URL('./src/assets/sample-cover.svg', import.meta.url));
 }
 
 function getApiPath(requestUrl: string | undefined): string | null {
@@ -79,4 +100,22 @@ function writeJson(response: ServerResponse, status: number, body: unknown): voi
   response.setHeader('Content-Type', 'application/json; charset=utf-8');
   response.setHeader('Cache-Control', 'no-store');
   response.end(JSON.stringify(body));
+}
+
+function writeBinary(
+  response: ServerResponse,
+  status: number,
+  body: Uint8Array,
+  contentType: string,
+  fileName: string,
+): void {
+  response.statusCode = status;
+  response.setHeader('Content-Type', contentType);
+  response.setHeader('Content-Length', body.byteLength);
+  response.setHeader(
+    'Content-Disposition',
+    `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+  );
+  response.setHeader('Cache-Control', 'no-store');
+  response.end(body);
 }

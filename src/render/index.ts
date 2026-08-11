@@ -11,10 +11,13 @@ export {
   type RenderRequestReviewProps,
 } from './RenderRequestReview';
 export {
+  cloneRenderJob,
   createSubmittedRenderJob,
+  createRenderOutputFileName,
   isRenderJobTerminal,
   validateRenderJob,
   type RenderJob,
+  type RenderJobArtifact,
   type RenderJobFailure,
   type RenderJobOutput,
   type RenderJobState,

@@ -78,4 +78,34 @@ describe('LocalRenderApi', () => {
       },
     });
   });
+
+  it('serves a rendered artifact as binary data', async () => {
+    const bytes = new TextEncoder().encode('GIF89a-download');
+    const api = createLocalRenderApi(createFakeRenderService(), {
+      getArtifact(jobId, fileName) {
+        if (jobId !== 'render-1' || fileName !== 'night-drive-preview.gif') return undefined;
+        return {
+          deliverableId: 'apple-album',
+          fileName,
+          contentType: 'image/gif',
+          width: 320,
+          height: 320,
+          frameCount: 16,
+          bytes,
+        };
+      },
+    });
+
+    const response = await api.handle({
+      method: 'GET',
+      path: '/render-files/render-1/night-drive-preview.gif',
+    });
+
+    expect(response).toEqual({
+      status: 200,
+      body: bytes,
+      contentType: 'image/gif',
+      fileName: 'night-drive-preview.gif',
+    });
+  });
 });

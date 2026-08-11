@@ -1,4 +1,5 @@
 import {
+  cloneRenderJob,
   completeRenderJob,
   createSubmittedRenderJob,
   failRenderJob,
@@ -70,14 +71,5 @@ export function createFakeRenderService(
 
       return cloneRenderJob(stored.job);
     },
-  };
-}
-
-function cloneRenderJob(job: RenderJob): RenderJob {
-  return {
-    ...job,
-    progress: { ...job.progress },
-    outputs: job.outputs.map((output) => ({ ...output })),
-    failure: job.failure ? { ...job.failure } : null,
   };
 }

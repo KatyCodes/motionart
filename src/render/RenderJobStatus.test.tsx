@@ -109,4 +109,35 @@ describe('RenderJobStatus', () => {
 
     expect(html).toContain('The render status could not be refreshed. Retrying…');
   });
+
+  it('offers a completed preview artifact for download without calling it a final master', () => {
+    const completed = createJob('completed');
+    completed.outputs = [{
+      deliverableId: 'apple-album',
+      fileName: 'night-drive-preview.gif',
+      artifact: {
+        kind: 'preview',
+        contentType: 'image/gif',
+        downloadUrl: '/api/company-tbd/render-files/render-1/night-drive-preview.gif',
+        width: 320,
+        height: 320,
+        frameCount: 16,
+      },
+    }];
+
+    const html = renderToStaticMarkup(
+      <RenderJobStatus
+        branding={branding}
+        job={completed}
+        request={request}
+        onEdit={() => undefined}
+        onRetry={() => undefined}
+      />,
+    );
+
+    expect(html).toContain('Download GIF preview');
+    expect(html).toContain('320 × 320px · 16 frames');
+    expect(html).toContain('/api/company-tbd/render-files/render-1/night-drive-preview.gif');
+    expect(html).toContain('Proof-of-concept preview');
+  });
 });

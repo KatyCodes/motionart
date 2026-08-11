@@ -118,6 +118,11 @@ output { color: #fff; font-variant-numeric: tabular-nums; }
 .render-job-deliverables strong { font-size: .86rem; }
 .render-job-deliverable-copy span { color: rgb(247 242 255 / 48%); font-size: .72rem; }
 .render-job-deliverable-state { max-width: 50%; overflow-wrap: anywhere; color: var(--host-accent, #d3b9ff); font-size: .75rem; text-align: right; }
+.render-job-artifact { display: grid; gap: .2rem; justify-items: end; max-width: 58%; text-align: right; }
+.render-job-artifact > span { overflow-wrap: anywhere; color: var(--host-accent, #d3b9ff); font-size: .75rem; }
+.render-job-artifact small { color: rgb(247 242 255 / 48%); font-size: .68rem; }
+.render-job-artifact a { margin-top: .35rem; padding: .48rem .65rem; border-radius: .55rem; color: #160d25; background: var(--host-accent, #d3b9ff); font-size: .72rem; font-weight: 800; text-decoration: none; }
+.render-job-artifact a:hover { filter: brightness(1.1); }
 .render-job-failure { margin: 1rem 0 0; padding: .8rem 1rem; border: 1px solid rgb(255 126 143 / 22%); border-radius: .75rem; color: #ffc7d0; background: rgb(255 126 143 / 7%); font-size: .8rem; }
 .render-job-service-status { display: block; margin-top: 1rem; padding: .8rem 1rem; border: 1px solid rgb(255 200 126 / 22%); border-radius: .75rem; color: #ffe4bd; background: rgb(255 200 126 / 7%); font-size: .8rem; }
 .render-job-actions { display: flex; gap: .65rem; justify-content: center; margin-top: 1.25rem; }

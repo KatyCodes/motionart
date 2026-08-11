@@ -1,5 +1,6 @@
 import type { RenderRequest } from '../src/render/RenderRequest';
 import type { RenderService } from '../src/render/RenderService';
+import type { RenderArtifactReader } from './render/RenderArtifact';
 
 export interface LocalRenderApiCall {
   method: string;
@@ -10,6 +11,8 @@ export interface LocalRenderApiCall {
 export interface LocalRenderApiResponse {
   status: number;
   body: unknown;
+  contentType?: string;
+  fileName?: string;
 }
 
 export interface LocalRenderApi {
@@ -17,7 +20,10 @@ export interface LocalRenderApi {
 }
 
 /** Development-only HTTP-shaped wrapper around the same service used by unit tests. */
-export function createLocalRenderApi(renderService: RenderService): LocalRenderApi {
+export function createLocalRenderApi(
+  renderService: RenderService,
+  artifactReader?: RenderArtifactReader,
+): LocalRenderApi {
   return {
     async handle({ method, path, body }) {
       if (method === 'POST' && path === '/render-jobs') {
@@ -37,6 +43,33 @@ export function createLocalRenderApi(renderService: RenderService): LocalRenderA
         } catch (error) {
           return createErrorResponse(404, 'RENDER_JOB_NOT_FOUND', error);
         }
+      }
+
+      if (method === 'GET' && path.startsWith('/render-files/')) {
+        const artifactPath = path.slice('/render-files/'.length).split('/');
+
+        if (artifactPath.length === 2 && artifactReader) {
+          const jobId = decodeURIComponent(artifactPath[0]);
+          const fileName = decodeURIComponent(artifactPath[1]);
+          const artifact = artifactReader.getArtifact(jobId, fileName);
+
+          if (artifact) {
+            return {
+              status: 200,
+              body: artifact.bytes,
+              contentType: artifact.contentType,
+              fileName: artifact.fileName,
+            };
+          }
+        }
+
+        return {
+          status: 404,
+          body: {
+            code: 'RENDER_ARTIFACT_NOT_FOUND',
+            message: 'The rendered preview file was not found.',
+          },
+        };
       }
 
       return {

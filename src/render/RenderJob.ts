@@ -5,6 +5,16 @@ export type RenderJobState = 'submitted' | 'processing' | 'completed' | 'failed'
 export interface RenderJobOutput {
   deliverableId: string;
   fileName: string;
+  artifact?: RenderJobArtifact;
+}
+
+export interface RenderJobArtifact {
+  kind: 'preview' | 'deliverable';
+  contentType: string;
+  downloadUrl: string;
+  width: number;
+  height: number;
+  frameCount: number;
 }
 
 export interface RenderJobFailure {
@@ -91,6 +101,18 @@ export function isRenderJobTerminal(job: RenderJob): boolean {
   return job.status === 'completed' || job.status === 'failed';
 }
 
+export function cloneRenderJob(job: RenderJob): RenderJob {
+  return {
+    ...job,
+    progress: { ...job.progress },
+    outputs: job.outputs.map((output) => ({
+      ...output,
+      artifact: output.artifact ? { ...output.artifact } : undefined,
+    })),
+    failure: job.failure ? { ...job.failure } : null,
+  };
+}
+
 export function validateRenderJob(value: unknown): asserts value is RenderJob {
   const job = requireRecord(value, 'Render job');
 
@@ -124,6 +146,18 @@ export function validateRenderJob(value: unknown): asserts value is RenderJob {
     const output = requireRecord(value, 'Render job output');
     requireText(output.deliverableId, 'output deliverable ID');
     requireText(output.fileName, 'output file name');
+
+    if (output.artifact !== undefined) {
+      const artifact = requireRecord(output.artifact, 'Render job artifact');
+      if (artifact.kind !== 'preview' && artifact.kind !== 'deliverable') {
+        throw new RangeError('Render job artifact has an unsupported kind.');
+      }
+      requireText(artifact.contentType, 'artifact content type');
+      requireText(artifact.downloadUrl, 'artifact download URL');
+      requirePositiveInteger(artifact.width, 'artifact width');
+      requirePositiveInteger(artifact.height, 'artifact height');
+      requirePositiveInteger(artifact.frameCount, 'artifact frame count');
+    }
 
     const deliverableId = output.deliverableId as string;
     if (outputIds.has(deliverableId)) {
@@ -162,9 +196,22 @@ function createOutputs(request: RenderRequest): RenderJobOutput[] {
 
     return {
       deliverableId: deliverable.id,
-      fileName: `${baseName}${count > 1 ? `-${count}` : ''}.${deliverable.output.format}`,
+      fileName: createRenderOutputFileName(
+        deliverable.title,
+        deliverable.output.format,
+        count > 1 ? String(count) : undefined,
+      ),
     };
   });
+}
+
+export function createRenderOutputFileName(
+  title: string,
+  format: string,
+  suffix?: string,
+): string {
+  const baseName = slugify(title) || 'motion-artwork';
+  return `${baseName}${suffix ? `-${slugify(suffix)}` : ''}.${format.toLowerCase()}`;
 }
 
 function slugify(value: string): string {

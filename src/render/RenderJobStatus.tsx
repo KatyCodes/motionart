@@ -90,9 +90,23 @@ export function RenderJobStatus({
                   <strong>{deliverable.title}</strong>
                   <span>{deliverable.destination.name}</span>
                 </div>
-                <span className="render-job-deliverable-state">
-                  {output?.fileName ?? formatDeliverableStatus(job.status)}
-                </span>
+                {output?.artifact ? (
+                  <div className="render-job-artifact">
+                    <span>{output.fileName}</span>
+                    <small>Proof-of-concept preview · bundled demo artwork</small>
+                    <small>
+                      {output.artifact.width} × {output.artifact.height}px ·{' '}
+                      {output.artifact.frameCount} frames
+                    </small>
+                    <a href={output.artifact.downloadUrl} download={output.fileName}>
+                      Download {formatFileExtension(output.fileName)} preview
+                    </a>
+                  </div>
+                ) : (
+                  <span className="render-job-deliverable-state">
+                    {output?.fileName ?? formatDeliverableStatus(job.status)}
+                  </span>
+                )}
               </li>
             );
           })}
@@ -135,4 +149,8 @@ function formatDeliverableStatus(status: RenderJobState): string {
   if (status === 'processing') return 'Rendering';
   if (status === 'failed') return 'Not completed';
   return 'Complete';
+}
+
+function formatFileExtension(fileName: string): string {
+  return fileName.split('.').at(-1)?.toUpperCase() ?? 'file';
 }

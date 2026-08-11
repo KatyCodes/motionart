@@ -74,6 +74,8 @@ export interface RenderService {
 
 The HTTP adapter turns those method calls into `POST /render-jobs` and `GET /render-jobs/{id}` requests. Its `getHeaders` callback can provide fresh authentication for each request. Responses begin as `unknown` because TypeScript cannot guarantee that a remote server returned valid data; `validateRenderJob` checks them before the adapter returns a typed `RenderJob`.
 
+The development server's `DriftGifRenderer.ts` demonstrates the other side of that interface. It uses the same pure `getDriftFrame(timeSeconds)` calculation as the PixiJS preview, Sharp to decode and crop artwork pixels, and a GIF encoder to write actual animated bytes. `LocalFileRenderService.ts` stores those bytes temporarily and adds a typed preview artifact to the completed job. Neither development file is bundled into the browser application.
+
 ## 8. `src/model/AlbumMotionProject.ts`: define the saved recipe
 
 ```ts

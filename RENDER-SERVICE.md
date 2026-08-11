@@ -23,6 +23,14 @@ Both methods accept an optional `AbortSignal`, allowing React to cancel obsolete
 
 Set `VITE_RENDER_SERVICE_MODE=fake` only when the browser-only adapter is useful for debugging. Render jobs in either local mode are temporary and disappear when the development process restarts.
 
+The first file renderer supports Drift requests with GIF output. It generates a real animated preview capped at 320px, 8 frames per second, and 2 seconds, then serves it from:
+
+```http
+GET /render-files/{url-encoded-job-id}/{url-encoded-file-name}
+```
+
+The completed job's output contains an optional `artifact` object with `kind: "preview"`, content type, download URL, dimensions, and frame count. The development resolver intentionally maps CD Baby references to the bundled cover. It does not persist browser uploads or signed URLs. Water, MP4, full-size output, customer asset resolution, durable file storage, and seamless-loop tuning remain production renderer work.
+
 ## Submit a job
 
 ```http

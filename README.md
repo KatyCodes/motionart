@@ -29,6 +29,8 @@ The host owns catalog data, artwork access, persistence, branding, and checkout.
 
 `RenderRequestReview` presents that contract to the artist before handing it back to the host's checkout callback. After the simulated checkout, the demo submits the request through the asynchronous `RenderService` interface and polls a `RenderJob` through submitted, processing, and completed states. Local development uses the real HTTP adapter against a development-only Vite endpoint; unit tests and static production previews can use the in-memory adapter.
 
+For a Drift request whose destination format is GIF, the local endpoint now renders and serves a real downloadable animated preview. It is intentionally capped at 320px, 8 frames per second, and 2 seconds; it is evidence that the deterministic render path works, not a destination-ready master. The local server resolves CD Baby artwork references to the bundled demo cover only. A production renderer will resolve the durable reference through the customer's authorized asset integration.
+
 The fake renderer is an adapter, not a dependency of the editor. A future Company TBD backend client can implement the same `submit(request)` and `get(jobId)` methods while the request, status screen, and editor remain unchanged.
 
 ### Host launch flow
