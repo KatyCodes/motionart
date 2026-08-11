@@ -9,5 +9,9 @@ export interface RenderedArtifact {
 }
 
 export interface RenderArtifactReader {
-  getArtifact(jobId: string, fileName: string): RenderedArtifact | undefined;
+  getArtifact(jobId: string, fileName: string): Promise<RenderedArtifact | undefined>;
+}
+
+export interface RenderArtifactStore extends RenderArtifactReader {
+  put(jobId: string, artifact: RenderedArtifact): Promise<void>;
 }

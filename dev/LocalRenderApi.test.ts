@@ -83,7 +83,7 @@ describe('LocalRenderApi', () => {
   it('serves a rendered artifact as binary data', async () => {
     const bytes = new TextEncoder().encode('GIF89a-download');
     const api = createLocalRenderApi(createFakeRenderService(), {
-      getArtifact(jobId, fileName) {
+      async getArtifact(jobId, fileName) {
         if (jobId !== 'render-1' || fileName !== 'night-drive-preview.gif') return undefined;
         return {
           deliverableId: 'apple-album',

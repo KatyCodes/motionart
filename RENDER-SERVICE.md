@@ -35,6 +35,8 @@ The completed job's output contains an optional `artifact` object with `kind: "p
 
 The local MP4 adapter uses the `ffmpeg-static` development dependency and streams a fragmented MP4 through memory. A production render worker can replace that process adapter without changing the browser-facing `RenderService` or the frame-rendering code.
 
+Local job and artifact persistence are also adapters. `RenderJobRepository` stores the job together with the request required to reproduce it, while `RenderArtifactStore` stores rendered bytes. Their in-memory implementations keep localhost fast; planned DynamoDB and S3 implementations use the same asynchronous contracts. The AWS mapping is described in [AWS-ARCHITECTURE.md](./AWS-ARCHITECTURE.md).
+
 ### Register development artwork
 
 The demo resolves its runtime `ArtworkSource` in the browser and registers the resulting bytes before submitting the durable render request:

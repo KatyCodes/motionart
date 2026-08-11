@@ -84,6 +84,8 @@ Drift and Water each supply only their effect-specific frame function. The GIF e
 
 `InMemoryArtworkStore.ts` keys temporary inputs by the durable reference; `LocalFileRenderService.ts` stores outputs temporarily and adds a typed preview artifact to the completed job. None of these development files is bundled into the browser application.
 
+`RenderJobRepository.ts` and `RenderArtifactStore` are examples of dependency inversion. `LocalFileRenderService` depends on what storage must do, not on DynamoDB, S3, or even JavaScript's `Map`. The in-memory classes implement those asynchronous interfaces today. Later AWS adapters can implement the same method signatures, so the coordinator does not change when storage moves to the cloud.
+
 ## 8. `src/model/AlbumMotionProject.ts`: define the saved recipe
 
 ```ts

@@ -72,7 +72,7 @@ export function createLocalRenderApi(
         if (artifactPath.length === 2 && artifactReader) {
           const jobId = decodeURIComponent(artifactPath[0]);
           const fileName = decodeURIComponent(artifactPath[1]);
-          const artifact = artifactReader.getArtifact(jobId, fileName);
+          const artifact = await artifactReader.getArtifact(jobId, fileName);
 
           if (artifact) {
             return {

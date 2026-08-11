@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RenderRequest } from '../../src/render/RenderRequest';
+import { createInMemoryRenderArtifactStore } from './InMemoryRenderArtifactStore';
+import { createInMemoryRenderJobRepository } from './InMemoryRenderJobRepository';
 import { createLocalFileRenderService } from './LocalFileRenderService';
 
 const request: RenderRequest = {
@@ -25,8 +27,12 @@ const request: RenderRequest = {
 describe('LocalFileRenderService', () => {
   it('attaches a downloadable preview artifact when rendering completes', async () => {
     const bytes = new TextEncoder().encode('GIF89a-real-preview');
+    const artifactStore = createInMemoryRenderArtifactStore();
+    const jobRepository = createInMemoryRenderJobRepository();
     const service = createLocalFileRenderService({
       apiBaseUrl: '/api/company-tbd',
+      artifactStore,
+      jobRepository,
       createJobId: () => 'local-file-1',
       now: () => '2026-08-11T12:00:00.000Z',
       async renderDeliverable(deliverable) {
@@ -63,7 +69,12 @@ describe('LocalFileRenderService', () => {
         },
       ],
     });
-    expect(service.getArtifact('local-file-1', 'night-drive-preview.gif')?.bytes).toEqual(bytes);
+    await expect(service.getArtifact('local-file-1', 'night-drive-preview.gif')).resolves
+      .toMatchObject({ bytes });
+    await expect(jobRepository.find('local-file-1')).resolves.toMatchObject({
+      job: { status: 'completed' },
+      request: { launchId: 'checkout-local-file' },
+    });
   });
 
   it('turns an unsupported render into a non-retryable failed job', async () => {
