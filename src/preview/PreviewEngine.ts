@@ -6,7 +6,7 @@ import {
   getDriftFrame,
   type DriftSettings,
 } from './DriftAnimation';
-import { getWaterFrame } from './WaterAnimation';
+import { getWaterDisplacementSample, getWaterFrame } from './WaterAnimation';
 
 export class PreviewEngine {
   private readonly app = new Application();
@@ -213,13 +213,10 @@ function createWaterDisplacementMap(): HTMLCanvasElement {
       const index = (y * size + x) * 4;
       const normalizedX = x / size;
       const normalizedY = y / size;
-      const horizontalWave = Math.sin(normalizedY * Math.PI * 8)
-        + Math.sin((normalizedX + normalizedY) * Math.PI * 4) * 0.45;
-      const verticalWave = Math.cos(normalizedX * Math.PI * 6)
-        + Math.cos((normalizedX - normalizedY) * Math.PI * 4) * 0.45;
+      const sample = getWaterDisplacementSample(normalizedX, normalizedY);
 
-      pixels[index] = 128 + horizontalWave * 40;
-      pixels[index + 1] = 128 + verticalWave * 40;
+      pixels[index] = 128 + sample.horizontal * 40;
+      pixels[index + 1] = 128 + sample.vertical * 40;
       pixels[index + 2] = 128;
       pixels[index + 3] = 255;
     }

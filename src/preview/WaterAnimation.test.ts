@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getWaterFrame } from './WaterAnimation';
+import { getWaterDisplacementSample, getWaterFrame } from './WaterAnimation';
 
 describe('getWaterFrame', () => {
   it('returns the same ripple state for the same time and settings', () => {
@@ -26,5 +26,11 @@ describe('getWaterFrame', () => {
     expect(() => getWaterFrame(Number.NaN, { speed: 1, intensity: 1 })).toThrow(RangeError);
     expect(() => getWaterFrame(1, { speed: 0, intensity: 1 })).toThrow(RangeError);
     expect(() => getWaterFrame(1, { speed: 1, intensity: -0.1 })).toThrow(RangeError);
+  });
+
+  it('repeats the displacement waveform at texture boundaries', () => {
+    expect(getWaterDisplacementSample(0.25, 0.75)).toEqual(
+      getWaterDisplacementSample(1.25, -0.25),
+    );
   });
 });

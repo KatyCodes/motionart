@@ -8,6 +8,11 @@ export interface WaterFrame {
   mapOffsetY: number;
 }
 
+export interface WaterDisplacementSample {
+  horizontal: number;
+  vertical: number;
+}
+
 export const defaultWaterSettings: MotionControls = {
   speed: 1,
   intensity: 1,
@@ -38,6 +43,22 @@ export function getWaterFrame(
     displacementY: (15 + (1 - pulse) * 13) * intensity,
     mapOffsetX: wrap(adjustedTime * 19, displacementMapSize),
     mapOffsetY: wrap(adjustedTime * 11, displacementMapSize),
+  };
+}
+
+/** The repeating waveform encoded into the PixiJS displacement texture. */
+export function getWaterDisplacementSample(
+  normalizedX: number,
+  normalizedY: number,
+): WaterDisplacementSample {
+  const x = wrap(normalizedX, 1);
+  const y = wrap(normalizedY, 1);
+
+  return {
+    horizontal: Math.sin(y * Math.PI * 8)
+      + Math.sin((x + y) * Math.PI * 4) * 0.45,
+    vertical: Math.cos(x * Math.PI * 6)
+      + Math.cos((x - y) * Math.PI * 4) * 0.45,
   };
 }
 

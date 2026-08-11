@@ -70,7 +70,7 @@ describe('LocalFileRenderService', () => {
     const service = createLocalFileRenderService({
       apiBaseUrl: '/api/company-tbd',
       async renderDeliverable() {
-        throw new Error('The preview renderer only supports the Drift effect.');
+        throw new Error('The preview renderer only produces GIF previews.');
       },
     });
     const submitted = await service.submit(request);
@@ -82,7 +82,7 @@ describe('LocalFileRenderService', () => {
       status: 'failed',
       failure: {
         code: 'LOCAL_PREVIEW_RENDER_FAILED',
-        message: 'The preview renderer only supports the Drift effect.',
+        message: 'The preview renderer only produces GIF previews.',
         retryable: false,
       },
     });
