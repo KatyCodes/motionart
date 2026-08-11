@@ -1,6 +1,7 @@
 import type { RenderRequest } from '../src/render/RenderRequest';
 import type { RenderService } from '../src/render/RenderService';
 import type { RenderArtifactReader } from './render/RenderArtifact';
+import type { RenderArtworkStore } from './render/InMemoryArtworkStore';
 
 export interface LocalRenderApiCall {
   method: string;
@@ -23,9 +24,29 @@ export interface LocalRenderApi {
 export function createLocalRenderApi(
   renderService: RenderService,
   artifactReader?: RenderArtifactReader,
+  artworkStore?: RenderArtworkStore,
 ): LocalRenderApi {
   return {
     async handle({ method, path, body }) {
+      if (method === 'PUT' && path.startsWith('/render-assets/')) {
+        if (!artworkStore) {
+          return createErrorResponse(501, 'ARTWORK_REGISTRATION_UNAVAILABLE', new Error(
+            'The local artwork registration service is unavailable.',
+          ));
+        }
+
+        try {
+          const reference = parseArtworkReferencePath(path);
+          if (!(body instanceof Uint8Array)) {
+            throw new TypeError('Artwork registration requires binary image data.');
+          }
+          artworkStore.register(reference, body);
+          return { status: 201, body: { reference } };
+        } catch (error) {
+          return createErrorResponse(400, 'INVALID_ARTWORK_REGISTRATION', error);
+        }
+      }
+
       if (method === 'POST' && path === '/render-jobs') {
         try {
           const job = await renderService.submit(body as RenderRequest);
@@ -80,6 +101,19 @@ export function createLocalRenderApi(
         },
       };
     },
+  };
+}
+
+function parseArtworkReferencePath(path: string) {
+  const segments = path.slice('/render-assets/'.length).split('/');
+  if (segments.length < 2 || segments.length > 3 || segments.some((segment) => !segment)) {
+    throw new RangeError('Artwork registration requires a provider, asset key, and optional version.');
+  }
+
+  return {
+    provider: decodeURIComponent(segments[0]),
+    assetKey: decodeURIComponent(segments[1]),
+    ...(segments[2] ? { version: decodeURIComponent(segments[2]) } : {}),
   };
 }
 

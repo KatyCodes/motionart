@@ -1,4 +1,7 @@
-import type { ArtworkReference } from '../model/ArtworkReference';
+import {
+  getArtworkReferenceKey,
+  type ArtworkReference,
+} from '../model/ArtworkReference';
 import {
   defaultReleaseDestinationProfileIds,
   type ReleaseDestinationProfileIds,
@@ -201,8 +204,4 @@ function registerArtworkSource(
   }
 
   sources.set(key, artwork.source);
-}
-
-function getArtworkReferenceKey(reference: ArtworkReference): string {
-  return [reference.provider, reference.assetKey, reference.version ?? ''].join('\u0000');
 }

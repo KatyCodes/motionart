@@ -1,26 +1,28 @@
-import { readFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { defineConfig, type Plugin } from 'vite';
 import { createLocalRenderApi } from './dev/LocalRenderApi';
 import { renderDriftGifPreview } from './dev/render/DriftGifRenderer';
+import { createInMemoryArtworkStore } from './dev/render/InMemoryArtworkStore';
 import { createLocalFileRenderService } from './dev/render/LocalFileRenderService';
 import { demoRenderApiBaseUrl } from './src/integration/DemoRenderApiConfig';
 
 const maximumRequestBytes = 1_000_000;
+const maximumArtworkBytes = 20_000_000;
 
 export default defineConfig({
   plugins: [localRenderApiPlugin()],
 });
 
 function localRenderApiPlugin(): Plugin {
+  const artworkStore = createInMemoryArtworkStore({ maximumBytes: maximumArtworkBytes });
   const renderService = createLocalFileRenderService({
     apiBaseUrl: demoRenderApiBaseUrl,
     async renderDeliverable(deliverable) {
-      const artwork = await resolveDemoArtwork(deliverable.artwork.provider);
+      const artwork = await artworkStore.resolve(deliverable.artwork);
       return renderDriftGifPreview(deliverable, artwork);
     },
   });
-  const api = createLocalRenderApi(renderService, renderService);
+  const api = createLocalRenderApi(renderService, renderService, artworkStore);
 
   return {
     name: 'company-tbd-local-render-api',
@@ -34,7 +36,11 @@ function localRenderApiPlugin(): Plugin {
         }
 
         try {
-          const body = request.method === 'POST' ? await readJsonBody(request) : undefined;
+          const body = request.method === 'POST'
+            ? await readJsonBody(request)
+            : request.method === 'PUT'
+              ? await readBinaryBody(request)
+              : undefined;
           const result = await api.handle({
             method: request.method ?? 'GET',
             path,
@@ -56,14 +62,6 @@ function localRenderApiPlugin(): Plugin {
   };
 }
 
-async function resolveDemoArtwork(provider: string): Promise<Uint8Array> {
-  if (provider !== 'cdbaby') {
-    throw new RangeError(`The local preview renderer cannot resolve artwork from ${provider}.`);
-  }
-
-  return readFile(new URL('./src/assets/sample-cover.svg', import.meta.url));
-}
-
 function getApiPath(requestUrl: string | undefined): string | null {
   if (!requestUrl) return null;
 
@@ -75,7 +73,22 @@ function getApiPath(requestUrl: string | undefined): string | null {
   return pathname.slice(demoRenderApiBaseUrl.length) || '/';
 }
 
+async function readBinaryBody(request: IncomingMessage): Promise<Uint8Array> {
+  return readBody(request, maximumArtworkBytes, 'The artwork registration is too large.');
+}
+
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
+  const body = await readBody(request, maximumRequestBytes, 'The local render request is too large.');
+  const text = Buffer.from(body).toString('utf8');
+  if (!text.trim()) throw new TypeError('The local render request body is empty.');
+  return JSON.parse(text) as unknown;
+}
+
+async function readBody(
+  request: IncomingMessage,
+  maximumBytes: number,
+  tooLargeMessage: string,
+): Promise<Uint8Array> {
   const chunks: Buffer[] = [];
   let receivedBytes = 0;
 
@@ -83,16 +96,14 @@ async function readJsonBody(request: IncomingMessage): Promise<unknown> {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     receivedBytes += buffer.byteLength;
 
-    if (receivedBytes > maximumRequestBytes) {
-      throw new RangeError('The local render request is too large.');
+    if (receivedBytes > maximumBytes) {
+      throw new RangeError(tooLargeMessage);
     }
 
     chunks.push(buffer);
   }
 
-  const text = Buffer.concat(chunks).toString('utf8');
-  if (!text.trim()) throw new TypeError('The local render request body is empty.');
-  return JSON.parse(text) as unknown;
+  return Buffer.concat(chunks);
 }
 
 function writeJson(response: ServerResponse, status: number, body: unknown): void {

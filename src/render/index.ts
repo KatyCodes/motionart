@@ -38,3 +38,10 @@ export {
   type RenderFetch,
   RenderServiceHttpError,
 } from './HttpRenderService';
+export {
+  createHttpArtworkRegistrationService,
+  createNoopArtworkRegistrationService,
+  registerRenderRequestArtwork,
+  type ArtworkRegistrationService,
+  type HttpArtworkRegistrationServiceOptions,
+} from './ArtworkRegistrationService';

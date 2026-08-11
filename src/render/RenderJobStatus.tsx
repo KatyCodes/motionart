@@ -93,7 +93,7 @@ export function RenderJobStatus({
                 {output?.artifact ? (
                   <div className="render-job-artifact">
                     <span>{output.fileName}</span>
-                    <small>Proof-of-concept preview · bundled demo artwork</small>
+                    <small>Proof-of-concept preview · host-provided artwork</small>
                     <small>
                       {output.artifact.width} × {output.artifact.height}px ·{' '}
                       {output.artifact.frameCount} frames

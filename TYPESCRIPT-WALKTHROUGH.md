@@ -74,7 +74,9 @@ export interface RenderService {
 
 The HTTP adapter turns those method calls into `POST /render-jobs` and `GET /render-jobs/{id}` requests. Its `getHeaders` callback can provide fresh authentication for each request. Responses begin as `unknown` because TypeScript cannot guarantee that a remote server returned valid data; `validateRenderJob` checks them before the adapter returns a typed `RenderJob`.
 
-The development server's `DriftGifRenderer.ts` demonstrates the other side of that interface. It uses the same pure `getDriftFrame(timeSeconds)` calculation as the PixiJS preview, Sharp to decode and crop artwork pixels, and a GIF encoder to write actual animated bytes. `LocalFileRenderService.ts` stores those bytes temporarily and adds a typed preview artifact to the completed job. Neither development file is bundled into the browser application.
+`ArtworkRegistrationService.ts` is a second small boundary. Before the demo submits a job, `registerRenderRequestArtwork` collects its distinct durable artwork references. The HTTP adapter resolves each matching URL, `Blob`, or loader to image bytes and sends them to the development server. A `Map<string, ArtworkReference>` removes duplicates, so Apple and Spotify deliverables that share exactly the same reference upload it once.
+
+The development server's `DriftGifRenderer.ts` demonstrates the other side of the render interface. It uses the same pure `getDriftFrame(timeSeconds)` calculation as the PixiJS preview, Sharp to decode and crop the registered artwork pixels, and a GIF encoder to write actual animated bytes. `InMemoryArtworkStore.ts` keys temporary inputs by the durable reference; `LocalFileRenderService.ts` stores outputs temporarily and adds a typed preview artifact to the completed job. None of these development files is bundled into the browser application.
 
 ## 8. `src/model/AlbumMotionProject.ts`: define the saved recipe
 

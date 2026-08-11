@@ -29,7 +29,22 @@ The first file renderer supports Drift requests with GIF output. It generates a 
 GET /render-files/{url-encoded-job-id}/{url-encoded-file-name}
 ```
 
-The completed job's output contains an optional `artifact` object with `kind: "preview"`, content type, download URL, dimensions, and frame count. The development resolver intentionally maps CD Baby references to the bundled cover. It does not persist browser uploads or signed URLs. Water, MP4, full-size output, customer asset resolution, durable file storage, and seamless-loop tuning remain production renderer work.
+The completed job's output contains an optional `artifact` object with `kind: "preview"`, content type, download URL, dimensions, and frame count. Water, MP4, full-size output, durable file storage, and seamless-loop tuning remain production renderer work.
+
+### Register development artwork
+
+The demo resolves its runtime `ArtworkSource` in the browser and registers the resulting bytes before submitting the durable render request:
+
+```http
+PUT /render-assets/{url-encoded-provider}/{url-encoded-asset-key}[/{url-encoded-version}]
+Content-Type: image/png
+
+<binary image bytes>
+```
+
+Each path segment is encoded separately. The development server caps an image at 20 MB and stores it in memory under the exact provider, asset key, and optional version. Restarting Vite clears the bytes.
+
+This development flow proves URLs, browser uploads, and authenticated loaders can all reach the renderer without adding temporary access details to `RenderRequest`. It also avoids making the render server fetch an arbitrary browser-entered URL. In production, an authorized server-to-server resolver can replace registration and obtain or refresh the image from the customer's catalog using the same durable reference.
 
 ## Submit a job
 

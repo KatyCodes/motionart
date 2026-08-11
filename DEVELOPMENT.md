@@ -62,7 +62,7 @@ Vite prints a local address, normally `http://localhost:5173`. Open that address
 
 During `npm run dev`, render requests travel through `/api/company-tbd`. Vite serves that development-only endpoint and keeps render jobs in memory, so restarting Vite clears them. This exercises the same HTTP adapter intended for the future backend without requiring Docker or a cloud account.
 
-The default Apple/Drift path creates a real 320px animated GIF preview in memory and exposes a download button when the job completes. This preview uses the bundled demo artwork, lasts at most 2 seconds, and is not a platform-ready master. Water and MP4 requests fail explicitly until their renderers are implemented.
+The default Apple/Drift path creates a real 320px animated GIF preview in memory and exposes a download button when the job completes. The selected URL, local image, or authenticated loader is resolved and temporarily registered before rendering, so the downloaded GIF uses the same host-provided artwork shown in the editor. The preview lasts at most 2 seconds and is not a platform-ready master. Water and MP4 requests fail explicitly until their renderers are implemented.
 
 To bypass HTTP temporarily while debugging the interface:
 

@@ -21,7 +21,7 @@ export async function decodeArtwork(
   source: ArtworkSource,
   signal: AbortSignal,
 ): Promise<DecodedArtwork> {
-  const blob = await resolveBlob(source, signal);
+  const blob = await resolveArtworkBlob(source, signal);
   signal.throwIfAborted();
 
   if (blob.size === 0) {
@@ -51,7 +51,11 @@ export async function decodeArtwork(
   return decodeWithImageElement(blob, signal);
 }
 
-async function resolveBlob(source: ArtworkSource, signal: AbortSignal): Promise<Blob> {
+/** Resolves a runtime-only source so integrations can preview or temporarily register it. */
+export async function resolveArtworkBlob(
+  source: ArtworkSource,
+  signal: AbortSignal,
+): Promise<Blob> {
   switch (source.type) {
     case 'url': {
       let response: Response;

@@ -138,6 +138,6 @@ describe('RenderJobStatus', () => {
     expect(html).toContain('Download GIF preview');
     expect(html).toContain('320 × 320px · 16 frames');
     expect(html).toContain('/api/company-tbd/render-files/render-1/night-drive-preview.gif');
-    expect(html).toContain('Proof-of-concept preview');
+    expect(html).toContain('Proof-of-concept preview · host-provided artwork');
   });
 });

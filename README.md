@@ -29,7 +29,9 @@ The host owns catalog data, artwork access, persistence, branding, and checkout.
 
 `RenderRequestReview` presents that contract to the artist before handing it back to the host's checkout callback. After the simulated checkout, the demo submits the request through the asynchronous `RenderService` interface and polls a `RenderJob` through submitted, processing, and completed states. Local development uses the real HTTP adapter against a development-only Vite endpoint; unit tests and static production previews can use the in-memory adapter.
 
-For a Drift request whose destination format is GIF, the local endpoint now renders and serves a real downloadable animated preview. It is intentionally capped at 320px, 8 frames per second, and 2 seconds; it is evidence that the deterministic render path works, not a destination-ready master. The local server resolves CD Baby artwork references to the bundled demo cover only. A production renderer will resolve the durable reference through the customer's authorized asset integration.
+For a Drift request whose destination format is GIF, the local endpoint renders and serves a real downloadable animated preview. It is intentionally capped at 320px, 8 frames per second, and 2 seconds; it is evidence that the deterministic render path works, not a destination-ready master. Before the demo submits a job, it resolves the selected URL, `File`/`Blob`, or authenticated loader and temporarily registers those image bytes under the durable artwork reference. The render request itself still contains no source URL or browser object.
+
+That registration endpoint is a development adapter, not a requirement for every customer. A production integration can instead let Company TBD's backend resolve the durable reference through the customer's authorized server-to-server asset API. Either design can refresh an expired signed URL at render time without saving that URL in the project.
 
 The fake renderer is an adapter, not a dependency of the editor. A future Company TBD backend client can implement the same `submit(request)` and `get(jobId)` methods while the request, status screen, and editor remain unchanged.
 
@@ -68,7 +70,7 @@ const session = createHostEditorSession({
 });
 ```
 
-The runtime `source` can be a CORS-enabled URL, a browser `File`/`Blob`, or an authenticated loader function. Only the durable `reference` is copied into saved motion drafts, so signed URLs and uploaded file objects are not persisted accidentally.
+The runtime `source` can be a CORS-enabled URL, a browser `File`/`Blob`, or an authenticated loader function. Only the durable `reference` is copied into saved motion drafts and render requests, so signed URLs and uploaded file objects are not persisted accidentally. The localhost demo temporarily uploads the resolved bytes immediately before rendering; restarting Vite clears them.
 
 An image URL that displays in a normal browser tab is not necessarily canvas-safe. Its actual `GET` response must include an appropriate `Access-Control-Allow-Origin` header. If it does not, the embedding customer should supply an authenticated loader backed by its own server.
 

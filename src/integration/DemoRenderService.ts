@@ -1,6 +1,9 @@
 import {
+  createHttpArtworkRegistrationService,
   createFakeRenderService,
   createHttpRenderService,
+  createNoopArtworkRegistrationService,
+  type ArtworkRegistrationService,
   type RenderService,
 } from '../render';
 import { demoRenderApiBaseUrl } from './DemoRenderApiConfig';
@@ -11,6 +14,7 @@ export interface DemoRenderServiceSelection {
   mode: DemoRenderServiceMode;
   label: string;
   service: RenderService;
+  artworkRegistrationService: ArtworkRegistrationService;
 }
 
 export function createDemoRenderService(
@@ -24,11 +28,15 @@ export function createDemoRenderService(
         mode,
         label: 'Local HTTP API',
         service: createHttpRenderService({ baseUrl: demoRenderApiBaseUrl }),
+        artworkRegistrationService: createHttpArtworkRegistrationService({
+          baseUrl: demoRenderApiBaseUrl,
+        }),
       }
     : {
         mode,
         label: 'In-memory demo',
         service: createFakeRenderService(),
+        artworkRegistrationService: createNoopArtworkRegistrationService(),
       };
 }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RenderRequest } from '../src/render/RenderRequest';
 import { createFakeRenderService } from '../src/render/RenderService';
 import { createLocalRenderApi } from './LocalRenderApi';
+import { createInMemoryArtworkStore } from './render/InMemoryArtworkStore';
 
 const request: RenderRequest = {
   schemaVersion: 1,
@@ -107,5 +108,24 @@ describe('LocalRenderApi', () => {
       contentType: 'image/gif',
       fileName: 'night-drive-preview.gif',
     });
+  });
+
+  it('registers artwork bytes under a durable reference', async () => {
+    const artworkStore = createInMemoryArtworkStore();
+    const api = createLocalRenderApi(createFakeRenderService(), undefined, artworkStore);
+    const bytes = new Uint8Array([4, 5, 6]);
+
+    const response = await api.handle({
+      method: 'PUT',
+      path: '/render-assets/customer%20catalog/albums%2Fone%2Fcover/version%202',
+      body: bytes,
+    });
+
+    expect(response).toMatchObject({ status: 201 });
+    await expect(artworkStore.resolve({
+      provider: 'customer catalog',
+      assetKey: 'albums/one/cover',
+      version: 'version 2',
+    })).resolves.toEqual(bytes);
   });
 });

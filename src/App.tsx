@@ -20,6 +20,7 @@ import type { ArtworkSource } from './preview/ArtworkSource';
 import {
   createRenderRequest,
   isRenderJobTerminal,
+  registerRenderRequestArtwork,
   RenderJobStatus,
   RenderRequestReview,
   type RenderJob,
@@ -195,9 +196,15 @@ export function App() {
   }
 
   async function handleCheckout(request: RenderRequest) {
-    setCheckoutMessage('CD Baby is submitting the paid render request.');
+    setCheckoutMessage('CD Baby is preparing the artwork for rendering.');
 
     try {
+      await registerRenderRequestArtwork(
+        request,
+        session.resolveArtwork,
+        demoRenderSelection.artworkRegistrationService,
+      );
+      setCheckoutMessage('CD Baby is submitting the paid render request.');
       const job = await demoRenderService.submit(request);
       const message = `CD Baby submitted render job ${job.id} with ${request.deliverables.length} deliverable${request.deliverables.length === 1 ? '' : 's'}.`;
 
