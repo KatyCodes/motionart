@@ -60,12 +60,25 @@ npm run dev
 
 Vite prints a local address, normally `http://localhost:5173`. Open that address in a browser.
 
+During `npm run dev`, render requests travel through `/api/company-tbd`. Vite serves that development-only endpoint and keeps render jobs in memory, so restarting Vite clears them. This exercises the same HTTP adapter intended for the future backend without requiring Docker or a cloud account.
+
+To bypass HTTP temporarily while debugging the interface:
+
+```bash
+VITE_RENDER_SERVICE_MODE=fake npm run dev
+```
+
+The production build defaults to the in-memory demonstration unless a deployed host explicitly configures `VITE_RENDER_SERVICE_MODE=http` and provides the matching API.
+
 Stop the development server with **Control-C**.
 
 ## Useful commands
 
 ```bash
 npm run doctor   # Check the local Node environment
+npm run lint     # Check code quality and common mistakes
+npm run test     # Run all automated tests once
+npm run check    # Run doctor, lint, tests, and the production build
 npm run dev      # Start the development server
 npm run build    # Type-check and create a production build
 npm run preview  # Preview the production build locally

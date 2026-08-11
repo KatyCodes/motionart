@@ -10,6 +10,7 @@ import {
   createHostEditorSession,
   type HostLaunchConfig,
 } from './integration/HostLaunchConfig';
+import { createDemoRenderService } from './integration/DemoRenderService';
 import { destinationProfiles } from './model/DestinationProfile';
 import type { HostBranding } from './model/HostBranding';
 import type { ReleaseMotionDraft } from './model/ReleaseMotionDraft';
@@ -17,7 +18,6 @@ import type { ReleaseOrder } from './model/ReleaseOrder';
 import { parseReleaseDraft, serializeReleaseDraft } from './persistence/ReleaseDraftCodec';
 import type { ArtworkSource } from './preview/ArtworkSource';
 import {
-  createFakeRenderService,
   createRenderRequest,
   isRenderJobTerminal,
   RenderJobStatus,
@@ -57,7 +57,11 @@ const demoBranding: HostBranding = {
 };
 
 const initialSession = createHostEditorSession(createDemoHostConfig('apple-album', hostedArtwork));
-const demoRenderService = createFakeRenderService();
+const demoRenderSelection = createDemoRenderService(
+  import.meta.env.VITE_RENDER_SERVICE_MODE,
+  import.meta.env.DEV,
+);
+const demoRenderService = demoRenderSelection.service;
 
 export function App() {
   const [session, setSession] = useState(initialSession);
@@ -76,24 +80,36 @@ export function App() {
   useEffect(() => {
     if (!renderJob || isRenderJobTerminal(renderJob)) return;
 
+    const activeJob = renderJob;
     let cancelled = false;
-    const pollTimer = window.setTimeout(() => {
-      void demoRenderService.get(renderJob.id)
-        .then((nextJob) => {
-          if (!cancelled) setRenderJob(nextJob);
-        })
-        .catch((error: unknown) => {
-          if (!cancelled) {
-            setCheckoutMessage(
-              error instanceof Error ? error.message : 'The render status could not be refreshed.',
-            );
-          }
+    const controller = new AbortController();
+    let pollTimer = window.setTimeout(poll, 900);
+
+    async function poll() {
+      try {
+        const nextJob = await demoRenderService.get(activeJob.id, {
+          signal: controller.signal,
         });
-    }, 900);
+
+        if (!cancelled) {
+          setCheckoutMessage(null);
+          setRenderJob(nextJob);
+        }
+      } catch (error) {
+        if (cancelled || isAbortError(error)) return;
+
+        const message = error instanceof Error
+          ? error.message
+          : 'The render status could not be refreshed.';
+        setCheckoutMessage(`${message} Retrying…`);
+        pollTimer = window.setTimeout(poll, 1800);
+      }
+    }
 
     return () => {
       cancelled = true;
       window.clearTimeout(pollTimer);
+      controller.abort();
     };
   }, [renderJob]);
 
@@ -250,6 +266,7 @@ export function App() {
           <div className="host-demo-heading">
             <strong>Simulated launch payload</strong>
             <span>{deliverable === 'apple-album' ? 'Album → Apple Music' : 'Track → Spotify'} · {artworkSourceName}</span>
+            <span>Renderer · {demoRenderSelection.label}</span>
           </div>
           <label className="host-demo-field">
             <span>Incoming order</span>
@@ -330,6 +347,7 @@ export function App() {
           branding={demoBranding}
           job={renderJob}
           request={reviewRequest}
+          statusMessage={checkoutMessage}
           windowActions={editorWindowActions}
           onEdit={returnToEditor}
           onRetry={retryRender}
@@ -402,4 +420,8 @@ function createDemoHostConfig(
 
 function getUrlHost(url: string): string {
   return new URL(url).host;
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
 }

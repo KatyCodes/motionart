@@ -12,6 +12,7 @@ export interface RenderJobStatusProps {
   job: RenderJob;
   request: RenderRequest;
   windowActions?: EditorWindowActions;
+  statusMessage?: string | null;
   onEdit: () => void;
   onRetry: () => void;
 }
@@ -44,6 +45,7 @@ export function RenderJobStatus({
   job,
   request,
   windowActions,
+  statusMessage,
   onEdit,
   onRetry,
 }: RenderJobStatusProps) {
@@ -98,6 +100,10 @@ export function RenderJobStatus({
 
         {job.failure ? (
           <p className="render-job-failure">{job.failure.message}</p>
+        ) : null}
+
+        {statusMessage ? (
+          <output className="render-job-service-status">{statusMessage}</output>
         ) : null}
 
         {job.status === 'completed' || job.status === 'failed' ? (

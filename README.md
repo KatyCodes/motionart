@@ -27,7 +27,7 @@ The host owns catalog data, artwork access, persistence, branding, and checkout.
 
 `createRenderRequest` turns the editor result into a versioned, serializable checkout contract. Each selected album or track gets its own item containing a durable artwork reference, motion settings, destination snapshot, and concrete render dimensions, duration, and format. Those output values come from the customer's `DestinationProfile.renderDefaults`, so changing a platform or white-label configuration does not require changing the request builder.
 
-`RenderRequestReview` presents that contract to the artist before handing it back to the host's checkout callback. After the simulated checkout, the demo submits the request through the asynchronous `RenderService` interface and polls a `RenderJob` through submitted, processing, and completed states. The fake service can also produce a retryable failure for tests.
+`RenderRequestReview` presents that contract to the artist before handing it back to the host's checkout callback. After the simulated checkout, the demo submits the request through the asynchronous `RenderService` interface and polls a `RenderJob` through submitted, processing, and completed states. Local development uses the real HTTP adapter against a development-only Vite endpoint; unit tests and static production previews can use the in-memory adapter.
 
 The fake renderer is an adapter, not a dependency of the editor. A future Company TBD backend client can implement the same `submit(request)` and `get(jobId)` methods while the request, status screen, and editor remain unchanged.
 

@@ -94,4 +94,19 @@ describe('RenderJobStatus', () => {
     expect(failedHtml).toContain('Try render again');
     expect(failedHtml).toContain('Edit motion');
   });
+
+  it('shows a temporary connection problem while polling can retry', () => {
+    const html = renderToStaticMarkup(
+      <RenderJobStatus
+        branding={branding}
+        job={createJob('processing')}
+        request={request}
+        statusMessage="The render status could not be refreshed. Retrying…"
+        onEdit={() => undefined}
+        onRetry={() => undefined}
+      />,
+    );
+
+    expect(html).toContain('The render status could not be refreshed. Retrying…');
+  });
 });

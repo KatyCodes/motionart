@@ -17,6 +17,12 @@ const renderService = createHttpRenderService({
 
 Both methods accept an optional `AbortSignal`, allowing React to cancel obsolete requests when the artist changes pages or closes the editor.
 
+## Local development
+
+`npm run dev` mounts an in-memory implementation at `/api/company-tbd`. The React demo still communicates through `createHttpRenderService`; only the server behind the URL is simulated. This verifies JSON serialization, HTTP methods, routing, response validation, polling, and cancellation without shipping the mock endpoint in the production bundle.
+
+Set `VITE_RENDER_SERVICE_MODE=fake` only when the browser-only adapter is useful for debugging. Render jobs in either local mode are temporary and disappear when the development process restarts.
+
 ## Submit a job
 
 ```http

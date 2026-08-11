@@ -119,6 +119,7 @@ output { color: #fff; font-variant-numeric: tabular-nums; }
 .render-job-deliverable-copy span { color: rgb(247 242 255 / 48%); font-size: .72rem; }
 .render-job-deliverable-state { max-width: 50%; overflow-wrap: anywhere; color: var(--host-accent, #d3b9ff); font-size: .75rem; text-align: right; }
 .render-job-failure { margin: 1rem 0 0; padding: .8rem 1rem; border: 1px solid rgb(255 126 143 / 22%); border-radius: .75rem; color: #ffc7d0; background: rgb(255 126 143 / 7%); font-size: .8rem; }
+.render-job-service-status { display: block; margin-top: 1rem; padding: .8rem 1rem; border: 1px solid rgb(255 200 126 / 22%); border-radius: .75rem; color: #ffe4bd; background: rgb(255 200 126 / 7%); font-size: .8rem; }
 .render-job-actions { display: flex; gap: .65rem; justify-content: center; margin-top: 1.25rem; }
 
 @keyframes render-job-pulse {
