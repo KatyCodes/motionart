@@ -3,7 +3,7 @@ import { defineConfig, type Plugin } from 'vite';
 import { createLocalRenderApi } from './dev/LocalRenderApi';
 import { createInMemoryArtworkStore } from './dev/render/InMemoryArtworkStore';
 import { createLocalFileRenderService } from './dev/render/LocalFileRenderService';
-import { renderMotionGifPreview } from './dev/render/MotionGifRenderer';
+import { renderMotionPreview } from './dev/render/MotionPreviewRenderer';
 import { demoRenderApiBaseUrl } from './src/integration/DemoRenderApiConfig';
 
 const maximumRequestBytes = 1_000_000;
@@ -19,7 +19,7 @@ function localRenderApiPlugin(): Plugin {
     apiBaseUrl: demoRenderApiBaseUrl,
     async renderDeliverable(deliverable) {
       const artwork = await artworkStore.resolve(deliverable.artwork);
-      return renderMotionGifPreview(deliverable, artwork);
+      return renderMotionPreview(deliverable, artwork);
     },
   });
   const api = createLocalRenderApi(renderService, renderService, artworkStore);

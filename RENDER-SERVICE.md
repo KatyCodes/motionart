@@ -23,15 +23,17 @@ Both methods accept an optional `AbortSignal`, allowing React to cancel obsolete
 
 Set `VITE_RENDER_SERVICE_MODE=fake` only when the browser-only adapter is useful for debugging. Render jobs in either local mode are temporary and disappear when the development process restarts.
 
-The proof-of-concept file renderer supports both Drift and Water requests with GIF output. It generates a real animated preview capped at 320px, 8 frames per second, and 2 seconds, then serves it from:
+The proof-of-concept file renderer supports both Drift and Water requests with GIF or MP4 output. It reads the requested format from the selected destination profile, generates a real animated preview capped at 320px, 8 frames per second, and 2 seconds, then serves it from:
 
 ```http
 GET /render-files/{url-encoded-job-id}/{url-encoded-file-name}
 ```
 
-The completed job's output contains an optional `artifact` object with `kind: "preview"`, content type, download URL, dimensions, and frame count. MP4, full-size output, durable file storage, and seamless-loop tuning remain production renderer work.
+The completed job's output contains an optional `artifact` object with `kind: "preview"`, content type, download URL, dimensions, and frame count. MP4 previews are H.264/YUV 4:2:0 files with even dimensions for player compatibility. Full-size output, durable file storage, audio policy, and destination-specific seamless-loop tuning remain production renderer work.
 
-`MotionGifRenderer` dispatches the requested effect. Drift and Water share one `GifPreviewEncoder`, which owns output sizing, timestamps, palettes, delays, and file metadata. Each effect supplies only the RGBA pixels for a timestamp. Water reuses the browser preview's deterministic frame state and repeating displacement waveform, then bilinearly samples the registered artwork through that field.
+`MotionPreviewRenderer` dispatches by configured file format, while the effect frame renderer is selected independently. `PreviewFrameRenderer` owns shared sizing and timestamps; `GifPreviewEncoder` and `Mp4PreviewEncoder` only encode those RGBA frames and add format-specific metadata. This keeps format, effect, and platform as separate decisions: adding a format does not require copying Drift and Water, and changing a customer profile does not add a platform-specific branch. Water reuses the browser preview's deterministic frame state and repeating displacement waveform, then bilinearly samples the registered artwork through that field.
+
+The local MP4 adapter uses the `ffmpeg-static` development dependency and streams a fragmented MP4 through memory. A production render worker can replace that process adapter without changing the browser-facing `RenderService` or the frame-rendering code.
 
 ### Register development artwork
 

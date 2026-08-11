@@ -76,7 +76,11 @@ The HTTP adapter turns those method calls into `POST /render-jobs` and `GET /ren
 
 `ArtworkRegistrationService.ts` is a second small boundary. Before the demo submits a job, `registerRenderRequestArtwork` collects its distinct durable artwork references. The HTTP adapter resolves each matching URL, `Blob`, or loader to image bytes and sends them to the development server. A `Map<string, ArtworkReference>` removes duplicates, so Apple and Spotify deliverables that share exactly the same reference upload it once.
 
-The development server's `MotionGifRenderer.ts` demonstrates the other side of the render interface. It selects the Drift or Water frame renderer, while `GifPreviewEncoder.ts` owns their shared dimensions, timeline, palette encoding, and artifact metadata. Drift uses `getDriftFrame(timeSeconds)` to crop a moving image. Water uses `getWaterFrame(timeSeconds)` plus the same repeating displacement waveform as PixiJS to bend the registered artwork pixels. This is DRY without forcing unlike effect math into one function.
+The development server's `MotionPreviewRenderer.ts` demonstrates the other side of the render interface. It looks at the requested `output.format` and delegates to `GifPreviewEncoder.ts` or `Mp4PreviewEncoder.ts`. It does not check for Apple or Spotify: those customer-configurable destination profiles already chose the format.
+
+`PreviewFrameRenderer.ts` is the shared middle layer. Its `PreviewFrameRenderer` function type says that an effect accepts artwork, dimensions, time, speed, and intensity and asynchronously returns RGBA pixels. Its `createPreviewRenderPlan` function caps preview dimensions, frame rate, and duration in one place. Its async generator supplies every timestamp and verifies that each effect returned the right number of pixel bytes.
+
+Drift and Water each supply only their effect-specific frame function. The GIF encoder turns those shared frames into palettes and delays; the MP4 encoder passes them to FFmpeg as H.264/YUV 4:2:0 video. Drift uses `getDriftFrame(timeSeconds)` to crop a moving image. Water uses `getWaterFrame(timeSeconds)` plus the same repeating displacement waveform as PixiJS to bend the registered artwork pixels. This is DRY without forcing unlike effect math or unlike file formats into one function.
 
 `InMemoryArtworkStore.ts` keys temporary inputs by the durable reference; `LocalFileRenderService.ts` stores outputs temporarily and adds a typed preview artifact to the completed job. None of these development files is bundled into the browser application.
 

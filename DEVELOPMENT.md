@@ -62,7 +62,7 @@ Vite prints a local address, normally `http://localhost:5173`. Open that address
 
 During `npm run dev`, render requests travel through `/api/company-tbd`. Vite serves that development-only endpoint and keeps render jobs in memory, so restarting Vite clears them. This exercises the same HTTP adapter intended for the future backend without requiring Docker or a cloud account.
 
-The Apple or Spotify flow can create a real 320px Drift or Water GIF preview in memory and exposes a download button when the job completes. The selected URL, local image, or authenticated loader is resolved and temporarily registered before rendering, so the downloaded GIF uses the same host-provided artwork shown in the editor. The preview lasts at most 2 seconds and is not a platform-ready master. MP4 requests fail explicitly until that renderer is implemented.
+The Apple or Spotify flow can create a real 320px Drift or Water preview in the destination profile's configured GIF or MP4 format and exposes a download button when the job completes. The selected URL, local image, or authenticated loader is resolved and temporarily registered before rendering, so the downloaded animation uses the same host-provided artwork shown in the editor. The preview lasts at most 2 seconds and is not a platform-ready master. Local MP4 encoding uses the development-only bundled FFmpeg executable; a production deployment will put the same encoder boundary behind a scalable render worker.
 
 To bypass HTTP temporarily while debugging the interface:
 
