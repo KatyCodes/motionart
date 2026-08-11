@@ -47,3 +47,22 @@ Production adapters will need conditional DynamoDB writes and idempotency checks
 6. **Observability and cleanup:** add CloudWatch logs and alarms, S3 lifecycle expiration, DynamoDB TTL for temporary records, and a dead-letter queue alarm.
 
 Each phase keeps the in-memory adapter for fast tests. AWS integration tests supplement the unit suite; they do not replace it.
+
+## Current account checkpoint
+
+**An AWS account is not required yet.** `npm run infra:test` and `npm run infra:synth` run locally and create no cloud resources. Do not run `cdk bootstrap` or `cdk deploy` yet.
+
+The account becomes necessary immediately before the first AWS integration deployment. Before that command, we will stop and complete this checklist together:
+
+1. Create the AWS account and enable root-user multi-factor authentication.
+2. Configure daily access through IAM Identity Center or another temporary-credential flow rather than root or permanent browser credentials.
+3. Choose one development region and the email address for cost alerts.
+4. Verify the identity with `aws sts get-caller-identity`.
+5. Bootstrap that account/region with termination protection. AWS explains that bootstrapping creates deployment resources and is required before the first CDK deployment: [CDK bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html).
+6. Review the synthesized template and deploy with the required `BudgetAlertEmail` parameter.
+
+The current stack retains its S3 bucket and DynamoDB table if the CloudFormation stack is deleted, protecting stored customer work from an accidental `cdk destroy`. Temporary objects under `previews/` expire after seven days. The two queues can be safely recreated and are removed with the stack.
+
+## Tooling security note
+
+The CDK packages are exact development-only versions so upgrades are intentional. At the time this stack was created, the current `aws-cdk-lib` release bundles `brace-expansion` 5.0.8 and npm reports [GHSA-rgw5-rvv9-x895](https://github.com/advisories/GHSA-rgw5-rvv9-x895). The patched 5.0.9 cannot be substituted because AWS bundles that dependency inside the library. `npm audit --omit=dev` reports zero production vulnerabilities, and the CDK only processes our trusted infrastructure source. Upgrade `aws-cdk-lib` as soon as AWS republishes with the patched bundle.

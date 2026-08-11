@@ -86,6 +86,19 @@ npm run build    # Type-check and create a production build
 npm run preview  # Preview the production build locally
 ```
 
+## Local AWS infrastructure
+
+The AWS CDK stack can be tested and converted into a CloudFormation template without an AWS account:
+
+```bash
+npm run infra:test
+npm run infra:synth
+```
+
+These commands do not deploy or create billable resources. The synthesized `cdk.out/` directory is generated locally and ignored by Git. Do not run `cdk bootstrap` or `cdk deploy` until the account-safety checkpoint in [AWS-ARCHITECTURE.md](./AWS-ARCHITECTURE.md) is complete.
+
+`npm run audit:production` checks dependencies that ship with the browser application. CDK is development tooling and is kept out of the production bundle.
+
 ## What does not need to run
 
 MAMP and Docker are not required for the current browser preview. MAMP can remain installed for older PHP or WordPress projects. Docker may become useful later when Album Motion gains a server rendering service.
