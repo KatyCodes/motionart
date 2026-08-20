@@ -9,6 +9,7 @@
     "lint:fix": "biome lint --write .",
     "format": "biome format --write .",
     "test": "vitest run",
+    "test:aws:s3": "MOTION_ART_AWS_INTEGRATION=1 vitest run dev/render/S3RenderArtifactStore.integration.test.ts",
     "test:watch": "vitest",
     "check": "npm run doctor && npm run lint && npm run test && npm run infra:synth && npm run build",
     "dev": "vite",

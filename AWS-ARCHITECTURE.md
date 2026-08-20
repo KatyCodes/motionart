@@ -40,27 +40,38 @@ Production adapters will need conditional DynamoDB writes and idempotency checks
 
 ## Incremental learning plan
 
-1. **Account safety:** enable multi-factor authentication, use IAM Identity Center or another temporary-credential flow, choose one development region, and create a small AWS Budget alert. Never put an AWS access key in this repository or browser code.
-2. **Infrastructure tests:** add an `infra/` TypeScript CDK app and write assertions for a private encrypted S3 bucket, lifecycle rules, a DynamoDB table, an SQS queue, and a dead-letter queue. `cdk synth` is safe local feedback; deployment comes later.
-3. **S3 adapter:** the private object read/write adapter is implemented and unit tested. Next, verify it against the deployed development bucket and add just-in-time presigned downloads.
+1. **Account safety:** the CLI uses temporary console-login credentials, development is isolated in `us-west-2`, and a USD 10 monthly Budget alerts at 80% actual usage. No permanent AWS access key belongs in this repository or browser code. Root MFA remains a required manual account setting and must be checked in the console.
+2. **Infrastructure tests and deployment:** complete. The CDK assertions cover the private encrypted S3 bucket, lifecycle rules, DynamoDB table, SQS render queue, dead-letter queue, and budget. The development stack is deployed and its live safeguards have been verified through read-only AWS API calls.
+3. **S3 adapter:** private object read/write is implemented, unit tested, and verified against the real development bucket with an opt-in round-trip integration test. Next, add just-in-time presigned downloads.
 4. **DynamoDB adapter:** implement `RenderJobRepository` with conditional updates so job state cannot move backward or be completed twice.
 5. **Worker:** package the existing Node/FFmpeg renderer in a Docker image, then run it as a Fargate worker consuming job IDs from SQS.
 6. **Observability and cleanup:** add CloudWatch logs and alarms, S3 lifecycle expiration, DynamoDB TTL for temporary records, and a dead-letter queue alarm.
 
 Each phase keeps the in-memory adapter for fast tests. AWS integration tests supplement the unit suite; they do not replace it.
 
-## Current account checkpoint
+## Current development deployment
 
-**The project is now at the account checkpoint.** Unit tests and `cdk synth` still run locally and create no cloud resources, but the next integration milestone deploys and verifies the real private S3 bucket. An AWS account is therefore required before continuing to `cdk bootstrap` or `cdk deploy`.
+The AWS account is on the active free plan. The project deliberately did not enable AWS Organizations or the default multi-Region IAM Identity Center configuration because doing so would have ended the account's free plan and created a customer-managed KMS key. AWS CLI 2.32 and later instead supports short-lived credentials from the existing console session through [`aws login`](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-sign-in.html).
 
-Before the first deployment, complete this checklist:
+The named `motionart-bootstrap` profile uses that temporary login provider and defaults to `us-west-2`. It was used for initial bootstrapping and deployment; it is not a permanent access key and expires automatically. Root credentials remain inappropriate for ordinary ongoing development. Before the service handles real customer data or adds collaborators, replace this bootstrap-only access with a dedicated least-privilege federated development identity.
 
-1. Create the AWS account and enable root-user multi-factor authentication. Do not create root access keys or share passwords, payment details, or MFA codes with the project or an assistant.
-2. Configure daily access through IAM Identity Center or another temporary-credential flow rather than root or permanent browser credentials.
-3. Use `us-west-2` as the initial development region and choose the email address for cost alerts.
-4. Verify the identity with `aws sts get-caller-identity`.
-5. Bootstrap that account/region with termination protection. AWS explains that bootstrapping creates deployment resources and is required before the first CDK deployment: [CDK bootstrapping](https://docs.aws.amazon.com/cdk/v2/guide/bootstrapping.html).
-6. Review the synthesized template and deploy with the required `BudgetAlertEmail` parameter.
+On August 20, 2026:
+
+1. `CDKToolkit` bootstrap version 32 was deployed in `us-west-2` with termination protection.
+2. `MotionArtDevelopment` was deployed with a private S3 artifact bucket, on-demand DynamoDB table, encrypted SQS render queue and dead-letter queue, and the cost budget.
+3. Live API checks confirmed public S3 access is fully blocked, AES-256 encryption is enabled, `previews/` expires after seven days, incomplete multipart uploads abort after one day, DynamoDB TTL uses `expiresAt`, and SQS sends a job to the dead-letter queue after three receives.
+4. The opt-in S3 integration test uploaded four bytes through `S3RenderArtifactStore`, read back the complete domain artifact, and deleted the test object. The bucket was empty after cleanup.
+
+Run the integration test only against an explicitly selected development bucket:
+
+```bash
+AWS_PROFILE=motionart-bootstrap \
+AWS_REGION=us-west-2 \
+MOTION_ART_ARTIFACT_BUCKET=<ArtifactBucketName output> \
+npm run test:aws:s3
+```
+
+Ordinary `npm test` skips this cloud integration test, so the normal TDD loop remains fast, offline, and free.
 
 The stack creates a USD 10 monthly budget with an email alert at 80% actual spend. A budget alert is a warning, not a hard spending cap; AWS can continue creating charges after the threshold is crossed.
 
