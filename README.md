@@ -25,7 +25,7 @@ The demo page is a small example host. The reusable editor receives all customer
 
 The host owns catalog data, artwork access, persistence, branding, and checkout. The editor owns motion controls, preview rendering, destination validation, and the structured purchase handoff.
 
-AWS is the first production-cloud adapter. The private development storage and queue stack is deployed, and the S3 artifact adapter has passed an opt-in live round-trip test. The service map, deployment status, and learning sequence live in [AWS-ARCHITECTURE.md](./AWS-ARCHITECTURE.md); the editor and render domain remain cloud-neutral.
+AWS is the first production-cloud adapter. The private development storage and queue stack is deployed, and both the S3 artifact adapter and DynamoDB job repository have passed opt-in live round-trip tests. The service map, deployment status, and learning sequence live in [AWS-ARCHITECTURE.md](./AWS-ARCHITECTURE.md); the editor and render domain remain cloud-neutral.
 
 `createRenderRequest` turns the editor result into a versioned, serializable checkout contract. Each selected album or track gets its own item containing a durable artwork reference, motion settings, destination snapshot, and concrete render dimensions, duration, and format. Those output values come from the customer's `DestinationProfile.renderDefaults`, so changing a platform or white-label configuration does not require changing the request builder.
 

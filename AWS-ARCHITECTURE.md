@@ -30,22 +30,23 @@ The first AWS version does not need CloudFront, multiple regions, Kubernetes, or
 
 ## Boundaries already in the code
 
-- `RenderJobRepository` saves and finds the job plus its versioned render request. `InMemoryRenderJobRepository` is the localhost adapter; a DynamoDB adapter will implement the same two asynchronous methods.
+- `RenderJobRepository` creates, finds, and revision-checks updates to a job plus its versioned render request. `InMemoryRenderJobRepository` keeps localhost fast, while `DynamoDbRenderJobRepository` implements the same cloud-neutral contract in AWS.
+- `DynamoDbRenderJobRepository` uses a conditional create to reject duplicate IDs and a conditional update to reject stale revisions. It validates records read from AWS before returning domain objects and refreshes the table's seven-day `expiresAt` TTL whenever active work is saved.
 - `RenderArtifactStore` saves and retrieves a rendered artifact by job ID and filename. `InMemoryRenderArtifactStore` is the localhost adapter, and the S3 adapter implements the same contract for AWS.
 - `S3RenderArtifactStore` is the first AWS adapter. It stores bytes and required render metadata under `previews/{encoded-job-id}/{encoded-file-name}` using the AWS SDK's normal credential chain. A missing object returns `undefined`; authorization and service errors remain visible instead of being mistaken for missing files.
 - `LocalFileRenderService` coordinates rendering through those interfaces. It no longer owns job or artifact `Map`s.
 - The client receives a stable Company TBD download route. A future AWS route can authorize the user and redirect to a newly generated S3 presigned URL without storing that temporary URL in the job.
 
-Production adapters will need conditional DynamoDB writes and idempotency checks because two SQS deliveries may race. A deterministic object key makes repeating the same completed artifact write safe. Failed messages should eventually move to a dead-letter queue for inspection.
+The conditional DynamoDB writes prevent two workers from silently overwriting one another because two SQS deliveries may race. A deterministic object key makes repeating the same completed artifact write safe. The future worker should treat a revision conflict as evidence that another worker has already advanced the job. Failed messages should eventually move to a dead-letter queue for inspection.
 
 ## Incremental learning plan
 
 1. **Account safety:** the CLI uses temporary console-login credentials, development is isolated in `us-west-2`, and a USD 10 monthly Budget alerts at 80% actual usage. No permanent AWS access key belongs in this repository or browser code. Root MFA remains a required manual account setting and must be checked in the console.
 2. **Infrastructure tests and deployment:** complete. The CDK assertions cover the private encrypted S3 bucket, lifecycle rules, DynamoDB table, SQS render queue, dead-letter queue, and budget. The development stack is deployed and its live safeguards have been verified through read-only AWS API calls.
-3. **S3 adapter:** private object read/write is implemented, unit tested, and verified against the real development bucket with an opt-in round-trip integration test. Next, add just-in-time presigned downloads.
-4. **DynamoDB adapter:** implement `RenderJobRepository` with conditional updates so job state cannot move backward or be completed twice.
+3. **S3 adapter:** private object read/write is implemented, unit tested, and verified against the real development bucket with an opt-in round-trip integration test. Just-in-time presigned downloads remain future work.
+4. **DynamoDB adapter:** complete. The versioned repository is covered by fast unit tests and a live create/read/update/conflict/delete integration test. Conditional writes prevent stale workers from replacing newer job state.
 5. **Worker:** package the existing Node/FFmpeg renderer in a Docker image, then run it as a Fargate worker consuming job IDs from SQS.
-6. **Observability and cleanup:** add CloudWatch logs and alarms, S3 lifecycle expiration, DynamoDB TTL for temporary records, and a dead-letter queue alarm.
+6. **Observability and cleanup:** add CloudWatch logs and alarms, including a dead-letter queue alarm. S3 lifecycle expiration and DynamoDB TTL are already configured for temporary data.
 
 Each phase keeps the in-memory adapter for fast tests. AWS integration tests supplement the unit suite; they do not replace it.
 
@@ -61,6 +62,7 @@ On August 20, 2026:
 2. `MotionArtDevelopment` was deployed with a private S3 artifact bucket, on-demand DynamoDB table, encrypted SQS render queue and dead-letter queue, and the cost budget.
 3. Live API checks confirmed public S3 access is fully blocked, AES-256 encryption is enabled, `previews/` expires after seven days, incomplete multipart uploads abort after one day, DynamoDB TTL uses `expiresAt`, and SQS sends a job to the dead-letter queue after three receives.
 4. The opt-in S3 integration test uploaded four bytes through `S3RenderArtifactStore`, read back the complete domain artifact, and deleted the test object. The bucket was empty after cleanup.
+5. The opt-in DynamoDB integration test created a versioned job, read it consistently, advanced it with a conditional update, proved a stale revision was rejected, and deleted the exact test item. The table was empty after cleanup.
 
 Run the integration test only against an explicitly selected development bucket:
 
@@ -71,11 +73,20 @@ MOTION_ART_ARTIFACT_BUCKET=<ArtifactBucketName output> \
 npm run test:aws:s3
 ```
 
-Ordinary `npm test` skips this cloud integration test, so the normal TDD loop remains fast, offline, and free.
+Run the DynamoDB integration test only against an explicitly selected development table:
+
+```bash
+AWS_PROFILE=motionart-bootstrap \
+AWS_REGION=us-west-2 \
+MOTION_ART_RENDER_JOB_TABLE=<RenderJobTableName output> \
+npm run test:aws:dynamodb
+```
+
+Ordinary `npm test` skips both AWS integration suites. They supplement the fast unit tests at the cloud boundary instead of replacing them.
 
 The stack creates a USD 10 monthly budget with an email alert at 80% actual spend. A budget alert is a warning, not a hard spending cap; AWS can continue creating charges after the threshold is crossed.
 
-The current stack retains its S3 bucket and DynamoDB table if the CloudFormation stack is deleted, protecting stored customer work from an accidental `cdk destroy`. Temporary objects under `previews/` expire after seven days. The two queues can be safely recreated and are removed with the stack.
+The current stack retains its S3 bucket and DynamoDB table if the CloudFormation stack is deleted, protecting stored customer work from an accidental `cdk destroy`. Temporary objects under `previews/` expire after seven days. Active job records receive a seven-day `expiresAt` value on each write; DynamoDB removes expired records asynchronously. The two queues can be safely recreated and are removed with the stack.
 
 ## Tooling security note
 

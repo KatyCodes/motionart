@@ -9,6 +9,7 @@
     "lint:fix": "biome lint --write .",
     "format": "biome format --write .",
     "test": "vitest run",
+    "test:aws:dynamodb": "MOTION_ART_AWS_INTEGRATION=1 vitest run dev/render/DynamoDbRenderJobRepository.integration.test.ts",
     "test:aws:s3": "MOTION_ART_AWS_INTEGRATION=1 vitest run dev/render/S3RenderArtifactStore.integration.test.ts",
     "test:watch": "vitest",
     "check": "npm run doctor && npm run lint && npm run test && npm run infra:synth && npm run build",
@@ -23,7 +24,9 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1115.0",
     "@aws-sdk/client-s3": "^3.1108.0",
+    "@aws-sdk/lib-dynamodb": "^3.1115.0",
     "pixi.js": "^8.19.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

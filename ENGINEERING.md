@@ -16,7 +16,7 @@ Biome is used instead of ESLint because the current TypeScript 7 compiler is new
 
 GitHub Actions runs the same `npm run check` command for every pull request and for changes merged to `main`.
 
-The check also synthesizes the AWS CDK stack locally. Infrastructure behavior is tested with CDK assertions before deployment, including public-access blocking, encryption, retention, retries, and budget alerts. Synthesis does not require an AWS account; cloud integration tests are a later boundary.
+The check also synthesizes the AWS CDK stack locally. Infrastructure behavior is tested with CDK assertions before deployment, including public-access blocking, encryption, retention, retries, and budget alerts. Synthesis does not require an AWS account. Opt-in S3 and DynamoDB integration tests verify the real development resources separately, clean up their exact records, and remain skipped during the ordinary offline TDD loop.
 
 ## What to unit test
 

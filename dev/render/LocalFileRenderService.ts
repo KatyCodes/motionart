@@ -9,11 +9,7 @@ import { validateRenderRequest, type RenderDeliverable } from '../../src/render/
 import type { RenderService } from '../../src/render/RenderService';
 import { createInMemoryRenderArtifactStore } from './InMemoryRenderArtifactStore';
 import { createInMemoryRenderJobRepository } from './InMemoryRenderJobRepository';
-import type {
-  RenderArtifactReader,
-  RenderArtifactStore,
-  RenderedArtifact,
-} from './RenderArtifact';
+import type { RenderArtifactReader, RenderArtifactStore, RenderedArtifact } from './RenderArtifact';
 import type { RenderJobRepository } from './RenderJobRepository';
 
 export interface LocalFileRenderServiceOptions {
@@ -46,35 +42,35 @@ export function createLocalFileRenderService({
     async submit(request) {
       validateRenderRequest(request);
       const job = createSubmittedRenderJob(request, createJobId(), now());
-      if (await jobRepository.find(job.id)) {
-        throw new Error(`Render job already exists: ${job.id}`);
-      }
-      await jobRepository.save({ job, request });
+      await jobRepository.create({ job, request });
       return cloneRenderJob(job);
     },
 
     async get(jobId) {
       const stored = await jobRepository.find(jobId);
       if (!stored) throw new Error(`Unknown render job: ${jobId}`);
+      let changed = false;
 
       if (stored.job.status === 'submitted') {
         stored.job = startRenderJob(stored.job, now());
+        changed = true;
       } else if (stored.job.status === 'processing') {
+        changed = true;
         try {
           const renderedArtifacts = await Promise.all(
             stored.request.deliverables.map(renderDeliverable),
           );
-          await Promise.all(renderedArtifacts.map((artifact) => (
-            artifactStore.put(jobId, artifact)
-          )));
+          await Promise.all(
+            renderedArtifacts.map((artifact) => artifactStore.put(jobId, artifact)),
+          );
 
           const completed = completeRenderJob(stored.job, stored.request, now());
           stored.job = {
             ...completed,
             outputs: completed.outputs.map((output) => {
-              const artifact = renderedArtifacts.find((candidate) => (
-                candidate.deliverableId === output.deliverableId
-              ));
+              const artifact = renderedArtifacts.find(
+                (candidate) => candidate.deliverableId === output.deliverableId,
+              );
               if (!artifact) throw new Error(`Missing rendered artifact: ${output.deliverableId}`);
 
               return {
@@ -92,15 +88,19 @@ export function createLocalFileRenderService({
             }),
           };
         } catch (error) {
-          stored.job = failRenderJob(stored.job, {
-            code: 'LOCAL_PREVIEW_RENDER_FAILED',
-            message: error instanceof Error ? error.message : 'The local preview render failed.',
-            retryable: false,
-          }, now());
+          stored.job = failRenderJob(
+            stored.job,
+            {
+              code: 'LOCAL_PREVIEW_RENDER_FAILED',
+              message: error instanceof Error ? error.message : 'The local preview render failed.',
+              retryable: false,
+            },
+            now(),
+          );
         }
       }
 
-      await jobRepository.save(stored);
+      if (changed) await jobRepository.update(stored);
       return cloneRenderJob(stored.job);
     },
 

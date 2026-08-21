@@ -24,27 +24,56 @@ const request: RenderRequest = {
 };
 
 describe('InMemoryRenderJobRepository', () => {
-  it('saves and updates job records without exposing stored mutable state', async () => {
+  it('creates and updates versioned records without exposing stored mutable state', async () => {
     const repository = createInMemoryRenderJobRepository();
     const job = createSubmittedRenderJob(request, 'render-1', '2026-08-11T12:00:00.000Z');
-    await repository.save({ job, request });
+    const created = await repository.create({ job, request });
 
     const firstRead = await repository.find('render-1');
-    expect(firstRead).toEqual({ job, request });
+    expect(created).toEqual({ job, request, revision: 0 });
+    expect(firstRead).toEqual(created);
 
     if (!firstRead) throw new Error('Expected the stored render job.');
     firstRead.job.status = 'processing';
     firstRead.request.deliverables[0].title = 'Changed outside the repository';
 
-    await expect(repository.find('render-1')).resolves.toEqual({ job, request });
+    await expect(repository.find('render-1')).resolves.toEqual({ job, request, revision: 0 });
 
-    await repository.save({
+    const updated = await repository.update({
       ...firstRead,
       request,
     });
+    expect(updated.revision).toBe(1);
     await expect(repository.find('render-1')).resolves.toMatchObject({
       job: { status: 'processing' },
+      revision: 1,
     });
+  });
+
+  it('rejects duplicate creates', async () => {
+    const repository = createInMemoryRenderJobRepository();
+    const job = createSubmittedRenderJob(request, 'render-1', '2026-08-11T12:00:00.000Z');
+
+    await repository.create({ job, request });
+
+    await expect(repository.create({ job, request })).rejects.toThrow(
+      'Render job already exists: render-1',
+    );
+  });
+
+  it('rejects a stale update without overwriting the current record', async () => {
+    const repository = createInMemoryRenderJobRepository();
+    const job = createSubmittedRenderJob(request, 'render-1', '2026-08-11T12:00:00.000Z');
+    const original = await repository.create({ job, request });
+    const current = await repository.update({
+      ...original,
+      job: { ...original.job, status: 'processing' },
+    });
+
+    await expect(repository.update(original)).rejects.toThrow(
+      'Render job revision conflict: render-1',
+    );
+    await expect(repository.find('render-1')).resolves.toEqual(current);
   });
 
   it('returns undefined for an unknown job', async () => {
