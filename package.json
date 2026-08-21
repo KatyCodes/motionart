@@ -4,15 +4,47 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "doctor": "node scripts/check-environment.mjs",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "test": "vitest run",
+    "test:aws:dynamodb": "MOTION_ART_AWS_INTEGRATION=1 vitest run dev/render/DynamoDbRenderJobRepository.integration.test.ts",
+    "test:aws:s3": "MOTION_ART_AWS_INTEGRATION=1 vitest run dev/render/S3RenderArtifactStore.integration.test.ts",
+    "test:watch": "vitest",
+    "check": "npm run doctor && npm run lint && npm run test && npm run infra:synth && npm run build",
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.infra.json && vite build",
+    "infra:synth": "cdk synth --quiet",
+    "infra:test": "vitest run infra",
+    "audit:production": "npm audit --omit=dev",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "dependencies": {
-    "pixi.js": "^8.19.0"
+    "@aws-sdk/client-dynamodb": "^3.1115.0",
+    "@aws-sdk/client-s3": "^3.1108.0",
+    "@aws-sdk/lib-dynamodb": "^3.1115.0",
+    "pixi.js": "^8.19.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.7",
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "aws-cdk": "2.1135.1",
+    "aws-cdk-lib": "2.264.0",
+    "constructs": "10.8.1",
+    "ffmpeg-static": "^5.3.0",
+    "gifenc": "^1.0.3",
+    "sharp": "^0.35.3",
+    "tsx": "4.23.12",
     "typescript": "^7.0.2",
-    "vite": "^8.1.5"
+    "vite": "^8.1.5",
+    "vitest": "^4.1.10"
   }
 }
